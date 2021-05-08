@@ -31,7 +31,7 @@ def list_types:
       (
         if (.[0] | type) == "string" then
           {
-            "name": { "type":"string" }
+            "type":"string"
           }
         else
           .[0] | with_entries(select(.value|nonempty)) | list_types
