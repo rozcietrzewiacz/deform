@@ -4,28 +4,20 @@ def camel:
 def to_kind:
   sub("(?<x>[a-z])"; .x | ascii_upcase) | camel;
 
-def nonempty:
-  if type == "array" or type == "object"
-  then 
-    any
-  else
-    . != null
-  end
-;
+def k8s_name:
+  gsub("_";"-");
 
 def to_xr:
-  .name as $name
+  (.name | k8s_name) as $name
   | ( .type | to_kind ) as $kind
   |
   {
     "apiVersion": "raw.import.tf.xxx/v1alpha1",
     "kind": $kind,
     "metadata": { 
-      "name": ( ."values".id ),
+      "name": $name,
     },
-    "spec":{
-      "values": .values
-    } 
+    "spec": .values
   }
 ;
 
