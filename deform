@@ -1,0 +1,5 @@
+#!/bin/sh
+ 
+< ${1} jq -f jq/from-tfstate-output_parse-${2}.jq \
+  | jq -f jq/from-type+value-to-raw-${3}.jq
+
