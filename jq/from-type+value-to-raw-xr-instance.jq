@@ -22,14 +22,18 @@ def cleanup:
 ;
 
 def to_xr:
-  (.name | k8s_name) as $name
+  (.name | k8s_name) as $k8s_name
   | ( .type | to_kind ) as $kind
   |
   {
     "apiVersion": "raw.import.tf.xxx/v1alpha1",
     "kind": $kind,
     "metadata": {
-      "name": $name,
+      "name": $k8s_name,
+      "annotations": {
+        "raw.import.tf.xxx/type": .type,
+        "raw.import.tf.xxx/name": .name
+      }
     },
     "spec": .values
   }
