@@ -16,6 +16,9 @@ def nonempty:
   end
 ;
 
+def to_plural: # policy -> policies; bucket -> buckets
+  sub("y$"; "ie")+"s";
+
 def list_types:
   if type == "object" then
     {
@@ -50,16 +53,16 @@ def list_types:
 ;
 
 def nlist:
-    if type == "object" then
-      with_entries(
-        select(.value|nonempty)
-        | .value |= (
-             list_types
-        )
+  if type == "object" then
+    with_entries(
+      select(.value|nonempty)
+      | .value |= (
+           list_types
       )
-    else
-     "XXXXXXXXXXXXXXXXXXXXXXXX-BUUUUUG"
-    end
+    )
+  else
+   "XXXXXXXXXXXXXXXXXXXXXXXX-BUUUUUG"
+  end
 ;
 
 def merge_same_types:
@@ -73,18 +76,19 @@ def to_xrd:
   .name as $name
   | ( .type | to_kind ) as $kind
   | ( $kind | to_singular ) as $singular
+  | ( $singular | to_plural ) as $plural
   |
   {
     "apiVersion": "apiextensions.crossplane.io/v1",
     "kind": "CompositeResourceDefinition",
     "metadata": {
-      "name": "awss3buckets.raw.import.tf.xxx"
+      "name": ($plural + ".raw.import.tf.xxx")
     },
     "spec": {
       "group": "raw.import.tf.xxx",
       "names": {
         "kind": $kind,
-        "plural": ($singular + "s")
+        "plural": $plural
       },
       "versions": [
         {
