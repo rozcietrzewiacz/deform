@@ -27,7 +27,7 @@ def list_types:
     {
       "type": ( . | type),
       #"items": (.[0] | list_types),
-      "items": 
+      "items":
       (
         if (.[0] | type) == "string" then
           {
@@ -62,6 +62,12 @@ def nlist:
     end
 ;
 
+def merge_same_types:
+  .
+  | group_by(.type)
+  | map(reduce .[] as $p ({}; . * $p))
+  | .[]
+;
 
 def to_xrd:
   .name as $name
@@ -106,4 +112,5 @@ def to_xrd:
 
 ####### MAIN ######
 .
+| merge_same_types
 | to_xrd

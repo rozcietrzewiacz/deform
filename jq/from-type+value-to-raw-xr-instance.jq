@@ -41,5 +41,6 @@ def to_xr:
 
 ####### MAIN ######
 .
+| .[]
 | cleanup
 | to_xr
