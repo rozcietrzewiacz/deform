@@ -37,11 +37,11 @@ YAML
 
 prep_files () 
 {
-  local provider=aws
+  local provider=${2-aws}
   local generated=()
 
-  [ $# -eq 2 ] || {
-    echo "Usage: $0   <json_file>   <root-module|child-modules>"
+  [ $# -gt 0 ] || {
+    echo "Usage: $0 <json_file> [provider]"
     return 1
   }
   
