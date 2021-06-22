@@ -79,7 +79,21 @@ prep_files ()
   echo "-+-+-+-+-+-+-+-+-+-+-+-+-"
   echo " > Generated ${#generated[@]} new files."
   echo "============ ${generated[@]}"
-  echo " > Press <Enter> to edit them one by one or <Ctrl-C> to skip."
-  read
-  for f in "${generated[@]}"; do vim $f; done
+
+  if [ ${#generated[@]} -gt 0 ]
+  then
+    echo " > Press <Enter> to edit the files one by one or <Ctrl-C> to skip."
+    read
+    for f in "${generated[@]}"
+    do
+      vim ${provider}/$f
+      echo "Is ${provider}/${f} ready? [y/N]"
+      read reply && {
+        if [ "$reply" == "y" ]; then
+          echo "mv ${provider}/${f} ${provider}/${f#_edit_}"
+          rm -i ${provider}/$f ###XXX
+        fi
+      }
+    done
+  fi
 }
