@@ -4,10 +4,9 @@ _yaml_header()
   cat << YAML
 source:
   apiVersion: "raw.import.tf.xxx/v1alpha1" #TODO: Come up with reasonable api name
-  kind: $K
+  kind: ${K}
 target:
-  apiVersion: #XXX COPY-PASTE FROM https://doc.crds.dev/github.com/crossplane/provider-aws/ s3.aws.crossplane.io/ XXX v1beta1
-  kind: #XXX (GUESS) search for: ${K#Aws}
+  #XXX apiVersion, kind - COPY-PASTE FROM https://doc.crds.dev/github.com/crossplane/provider-aws/ - search for: ${K#Aws}
 imports:
 YAML
 }
@@ -16,7 +15,6 @@ _yaml_import_expand()
 {
   cat << YAML
 - from: "$1"
-  to: "spec.forProvider." #XXX
 YAML
 }
 
@@ -24,6 +22,10 @@ _yaml_helpful_footer()
 {
   cat << 'YAML'
 ##### COPY-PASTE helpers ####
+
+  to: "spec.forProvider."
+  to: "metadata."
+
   transforms:
   - type: convert
     convert:
