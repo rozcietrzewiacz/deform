@@ -12,7 +12,8 @@ def cleanup:
     if type == "object" then
       with_entries(
         select(
-          .value != null and .value != [] and .value !={}
+          #TODO: allow selecting whether or not empty strings should be omitted
+          .value != null and .value != [] and .value !={} and .value != ""
         )
       )
     else
