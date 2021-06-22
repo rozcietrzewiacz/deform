@@ -87,10 +87,7 @@ prep_files ()
       | .[]
     ' \
     | jq -r '
-      @sh "
-        kind=\(.kind)
-        paths=(\({spec}|[paths(scalars) | map(.|tostring) | join(".")]))
-        "
+      @sh "kind=\(.kind) paths=(\({spec}|[paths(scalars) | map(.|tostring) | join(".")]))"
       '
   )
 
