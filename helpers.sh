@@ -66,7 +66,16 @@ prep_files ()
       generated+=("$yaml")
       echo
     fi
-  done < <(./deform $1 $2 xr \
+    cd -
+  done < <(
+  #####
+  ./deform $1 ${provider} xr \
+    | jq -s '
+      .
+      | group_by(.kind)
+      | map(reduce .[] as $p ({}; . * $p))
+      | .[]
+    ' \
     | jq -r '
       @sh "
         kind=\(.kind)
