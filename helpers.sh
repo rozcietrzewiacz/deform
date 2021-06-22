@@ -49,21 +49,31 @@ prep_files ()
   ### See: https://unix.stackexchange.com/questions/224576/how-do-i-append-an-item-to-an-array-in-a-pipeline
   while read lin
   do
+    unset kind
     eval $lin
-    local yaml="${provider}/${kind}.yaml"
-    if [ -r ${yaml} ]; then 
-      echo " > ${yaml} already exists. SKIPPING.";
-      #ls ${yaml} | grep --color=always "${kind}.yaml"
+    [ $kind ] || continue
+
+    cd ${provider}
+    local yaml="${kind}.yaml"
+
+    if [ -r "_missing_${yaml}" ] || \
+       [ -r "_skip_${yaml}"    ] || \
+       [ -r "_edit_${yaml}"    ] || \
+       [ -r "${yaml}"          ]
+    then
+      echo " > $(ls -1 *${yaml}) already exists; SKIPPING ${kind}"
+    #ls ${yaml} | grep --color=always "${kind}.yaml"
     else
+      local yaml_edit="_edit_${yaml}"
       echo -e "\n\e[44;1m>> Found ${#paths[@]} json paths in spec for $kind \e[0m";
-      echo " > generating ${yaml}"
-      _yaml_header $kind >> ${yaml}
+      echo " > generating ${yaml_edit}"
+      _yaml_header $kind >> ${yaml_edit}
       for p in ${paths[@]}; do
-        _yaml_import_expand $p >> ${yaml}
+        _yaml_import_expand $p >> ${yaml_edit}
       done
-      _yaml_helpful_footer >> ${yaml}
-      echo " > ${yaml} generated"
-      generated+=("$yaml")
+      _yaml_helpful_footer >> ${yaml_edit}
+      echo " > ${yaml_edit} generated"
+      generated+=("$yaml_edit")
       echo
     fi
     cd -
