@@ -43,10 +43,10 @@ prep_files ()
   local generated=()
 
   [ $# -gt 0 ] || {
-    echo "Usage: $0 <json_file> [provider]"
+    echo "Usage: $FUNCNAME <json_file> [provider]"
     return 1
   }
- 
+
   ## WHY like this? BECAUSE BASH! Cannot alter variables from a pipe.
   ### See: https://unix.stackexchange.com/questions/224576/how-do-i-append-an-item-to-an-array-in-a-pipeline
   while read lin
