@@ -37,7 +37,7 @@ _yaml_helpful_footer()
 YAML
 }
 
-prep_files () 
+prep_files ()
 {
   local provider=${2-aws}
   local generated=()
@@ -46,7 +46,7 @@ prep_files ()
     echo "Usage: $0 <json_file> [provider]"
     return 1
   }
-  
+ 
   ## WHY like this? BECAUSE BASH! Cannot alter variables from a pipe.
   ### See: https://unix.stackexchange.com/questions/224576/how-do-i-append-an-item-to-an-array-in-a-pipeline
   while read lin

@@ -2,6 +2,6 @@
 #Usage:
 # $> ./deform tfstate-output.json [root-module|child-modules] [xr|xrd]
 
-< ${1} jq -f jq/from-tfstate-output_parse-root-module.jq --args ${2} \
+< ${1} jq -f jq/from-tfstate-output_parse-modules.jq --args ${2} \
   | jq -s -f jq/from-type+value-to-raw-${3}.jq
 
