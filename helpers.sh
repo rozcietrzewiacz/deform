@@ -112,7 +112,7 @@ prep_files ()
   #TODO: derive tf provider spec and crossplane crds jsons from provider name
   #TODO: generate the above files in a standardized manner
   local crd_extracted_params=$(realpath "provider-crds/extracted_params-aws_v0.19.0.json")
-  local terraform_specs=$(realpath "terraform-provider-scrape/my-own-sed-version_1.json")
+  local terraform_specs=$(realpath "../terraform-provider-scrape/my-own-sed-version_1.json")
 
   __get_cr_element()
   {
@@ -142,8 +142,8 @@ prep_files ()
         @sh "raw_kind=\(.kind) paths=(\({spec}|[paths(scalars) | map(.|tostring) | join(".")]))"
         '
   )
-  [ -d ${provider}_v2 ] || mkdir ${provider}_v2
-  cd ${provider}_v2
+  [ -d ${provider} ] || mkdir ${provider}
+  cd ${provider}
   ##### MAIN LOOP #####
   while read line <&3
   do
