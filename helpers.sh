@@ -260,16 +260,6 @@ prep_files ()
   cd - &> /dev/null
 }
 
-# cover ()
-# {
-#   ./deform <( cat $@ ) aws xr | jq '.kind' -r | sort | uniq -c | sort -g \
-#   | column -J --table-columns "count,kind" \
-#   | jq -c '.table[]|.status=(.|@sh "kAAAAAind=\(.kind); ls aws/${kind}.yaml")'
-#   #do
-#   #    echo -e "\e[35m >> \e[0m ${kind}($count)\ttesting...";
-#   #done \
-# }
-
 cover ()
 {
   local provider=$1
@@ -361,13 +351,6 @@ tf_extract_provider_params ()
   echo "]"
   echo "}"
 }
-
-#guess_config_for ()
-#{
-#  local kind=${1}
-#  local crds_file=${2}
-#  local kind_words=$(echo $kind | tr '_' ' ')
-#  local candidates=
 
 select_mappings ()
 {
