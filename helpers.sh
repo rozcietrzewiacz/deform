@@ -190,7 +190,9 @@ prep_files ()
     local previous_word=""
     for path in ${paths[@]}
     do
-      #XXXXXX echo ">>>> $LINENO"
+      #"id" is a special parameter indicating `external-name`,
+      # hardcoded in the `deform-composer`
+      if [ "${path}" == "spec.id" ]; then continue; fi
 
       local word=$( echo "${path}" | cut -d '.' -f 2 | tr -d _ )
       #TODO: This section really cries out for a proper programming language!
@@ -238,11 +240,11 @@ prep_files ()
     done
 
     __e " > identified ${#exports[@]} attribute path matches"
-    echo "#exports:"
+    echo "exports:"
     for k in ${!exports[@]}
     do
-      echo "#- from: \"$k\""
-      echo "#  at: \"status.atProvider.${exports[$k]}\""
+      echo "- from: \"$k\""
+      echo "  at: \"status.atProvider.${exports[$k]}\""
     done
 
     __e " > NOTE: found ${#unidentified[@]} unidentified paths"

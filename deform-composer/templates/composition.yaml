@@ -1,0 +1,36 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: {{ lower .Values.source.kind }}.deform.import.tf.xxx
+spec:
+  compositeTypeRef:
+    apiVersion: {{ .Values.source.apiVersion}}
+    kind: {{ .Values.source.kind }}
+  resources:
+  - base:
+      apiVersion: {{ .Values.target.apiVersion }}
+      kind: {{ .Values.target.kind }}
+      metadata: {}
+      spec: {}
+    patches:
+    - fromFieldPath: "metadata.name"
+    - fromFieldPath: "metadata.labels"
+    - fromFieldPath: "spec.id"
+      toFieldPath: "spec.annotations['crossplane.io/external-name']"
+    {{- range .Values.imports }}
+    - fromFieldPath: {{ .from }}
+      toFieldPath: {{ .to }}
+      {{- with .transforms }}
+      transforms:
+      {{- . | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- range .Values.exports }}
+    - type: ToCompositeFieldPath ### UP
+      fromFieldPath: {{ .from }}
+      toFieldPath: {{ .at }}
+      {{- with .transforms }}
+      transforms:
+      {{- . | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
