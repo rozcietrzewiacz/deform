@@ -39,21 +39,23 @@ YAML
 
 prep_files ()
 {
+  # TODO: replace `>> ${yaml_edit}` with a fd use
   local provider=${2-aws}
   local generated=()
 
   [ $# -gt 0 ] || {
     echo "Usage: $FUNCNAME <json_file> [provider]"
+    #TODO: describe what type of json file is expected!
     return 1
   }
 
   ## WHY like this? BECAUSE BASH! Cannot alter variables from a pipe.
   ### See: https://unix.stackexchange.com/questions/224576/how-do-i-append-an-item-to-an-array-in-a-pipeline
-  while read lin
+  while read line
   do
     unset kind
-    eval $lin
-    [ $kind ] || continue
+    eval ${line}
+    [ ${kind} ] || continue
 
     cd ${provider}
     local yaml="${kind}.yaml"
@@ -67,7 +69,7 @@ prep_files ()
     #ls ${yaml} | grep --color=always "${kind}.yaml"
     else
       local yaml_edit="_edit_${yaml}"
-      echo -e "\n\e[44;1m>> Found ${#paths[@]} json paths in spec for $kind \e[0m";
+      echo -e "\n\e[44;1m>> Found ${#paths[@]} json paths in spec for ${kind} \e[0m";
       echo " > generating ${yaml_edit}"
       _yaml_header $kind >> ${yaml_edit}
       for p in ${paths[@]}; do
@@ -82,14 +84,14 @@ prep_files ()
   done < <(
   #####
   ./deform $1 ${provider} xr \
-    | jq -s '
-      .
+     | jq -s '
+       .
       | group_by(.kind)
       | map(reduce .[] as $p ({}; . * $p))
       | .[]
     ' \
     | jq -r '
-      @sh "kind=\(.kind) paths=(\({spec}|[paths(scalars) | map(.|tostring) | join(".")]))"
+       @sh "kind=\(.kind) paths=(\({spec}|[paths(scalars) | map(.|tostring) | join(".")]))"
       '
   )
 
@@ -226,6 +228,11 @@ cover_stats()
 
 extract_params ()
 {
+  #TODO document usage!
+  #TODO Complete the implementation. From history:
+  # $ cd terraform-provider-scrape/app/terraform-provider-aws/website/docs/r/
+  # ^^^ replace this with e.g. "git clone https://github.com/terraform-providers/terraform-provider-aws.git"
+  # $ time ( for f in *; do kind=${f%%.*}; extract_params $kind; done ) | jq -c > ../../../../../my-own-sed-version_1.json
   local kind=$1
   [ -f ${kind}.* ] || return
   echo -n "{
