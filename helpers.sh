@@ -1,13 +1,18 @@
 _yaml_header()
 {
-  local K=$1
+  #In1: raw kind name
+  #In2: target apiGroup
+  #In3: target kind
+  local raw_kind=$1
+  local target_api_version=$2
+  local target_kind=$3
   cat << YAML
 source:
   apiVersion: "raw.import.tf.xxx/v1alpha1" #TODO: Come up with reasonable api name
-  kind: ${K}
+  kind: ${raw_kind}
 target:
-  #XXX apiVersion, kind - COPY-PASTE FROM https://doc.crds.dev/github.com/crossplane/provider-aws/ - search for: ${K#Aws}
-imports:
+  apiVersion: ${target_api_version}
+  kind: ${target_kind}
 YAML
 }
 
@@ -37,85 +42,222 @@ _yaml_helpful_footer()
 YAML
 }
 
+_find_target_crd_for_given_raw_crd()
+{
+  local crd_extracted_params_file=${1}
+  local raw_crd_kind=${2}
+  shift 2
+  #All subsequent parameters are passed to fzf header
+  _split_camel_words()
+  {
+    echo $@ \
+    | sed -e 's/[A-Z][a-z0-9]/ \0/g' -E -e 's/[A-Z][A-Z]+/ \0/g' \
+    | tr '[A-Z]' '[a-z]' | cut -d ' ' -f 3-
+    # Deform's "raw crd" kind name is based on terraform module name, where
+    # the first word is the provider name. Due to how the first sed expression
+    # above is structured, there is also an extra space at the beginning.
+    # All this considered, we start from the third segment.
+  }
+  local kind_words="$(_split_camel_words ${raw_crd_kind})"
+
+  # Concept: the arrays include entries in the form:
+  # "<id>:<greppable>", where:
+  #    <id> - the "<group>.<kind>" string, as .id in crd_extracted_params_file
+  #    <greppable> - either "<group><kind>" or "<kind>" alone
+  #
+  # Thus egrep only focuses on the second part, starting with ":"
+  local eregex_kind_words=":\<${kind_words// /.?}\>"
+
+  local xp_groupKinds=( $(< ${crd_extracted_params_file} \
+    jq -r '"\(.id):\(.group + .kind)"' ))
+  local xp_kinds=( $(< ${crd_extracted_params_file} \
+    jq -r '"\(.id):\(.kind)"' ))
+
+  ### Strategy:
+  # - try to match <group><kind> first
+  # - if no single match found, try <kind> alone
+  # - if still no match was found, use fzf with <group>.<kind> (i.e. "id")
+  {
+    printf "%s\n" ${xp_groupKinds[@]} \
+      | grep -i -E "${eregex_kind_words}" \
+    || printf "%s\n" ${xp_kinds[@]} \
+      | grep -i -E "${eregex_kind_words}" \
+    || printf "%s\n" ${xp_groupKinds[@]%%:*} \
+      | fzf -i -q "${kind_words}" \
+          --no-info \
+          --reverse \
+          --preview-window=right,65% \
+          --preview="echo Selected Crossplane provider CRD parameters:;
+              < ${crd_extracted_params_file} jq -C '
+                select(.id == \"'{}'\")
+                | del(.id)
+                | del(.group)
+               '" \
+          --header=$'SELECT MATCH FOR \e[44;1m '${raw_crd_kind}$' \e[0m\n'"$(
+              printf "%s\n" $@ | head -n 30;
+              echo v----------------------v)"
+
+  } | cut -d ':' -f 1
+}
+
 prep_files ()
 {
-  # TODO: replace `>> ${yaml_edit}` with a fd use
-  local provider=${2-aws}
-  local generated=()
+  #IN1: tfstate-show json
+  #IN2: provider name (e.g. "aws", "gcp")
 
-  [ $# -gt 0 ] || {
-    echo "Usage: $FUNCNAME <json_file> [provider]"
-    #TODO: describe what type of json file is expected!
-    return 1
+  local tfstate_show=${1}
+  local provider=${2-aws}
+
+  #
+  #TODO: derive tf provider spec and crossplane crds jsons from provider name
+  #TODO: generate the above files in a standardized manner
+  local crd_extracted_params=$(realpath "provider-crds/extracted_params-aws_v0.19.0.json")
+  local terraform_specs=$(realpath "terraform-provider-scrape/my-own-sed-version_1.json")
+
+  __get_cr_element()
+  {
+    #In1: id
+    #In2: desired key
+    #In3+: extra jq args
+    local id=${1}
+    local key=${2}
+    shift 2
+    < ${crd_extracted_params} jq -r 'select(.id=="'${id}'").'${key} $@
+  }
+  __e()
+  {
+    echo "$@" > /dev/stderr
   }
 
-  ## WHY like this? BECAUSE BASH! Cannot alter variables from a pipe.
-  ### See: https://unix.stackexchange.com/questions/224576/how-do-i-append-an-item-to-an-array-in-a-pipeline
-  while read line
+  #FD3: MAIN LOOP INPUT
+  exec 3< <(
+    ./deform ${tfstate_show} ${provider} xr \
+      | jq -s '
+        .
+        | group_by(.kind)
+        | map(reduce .[] as $p ({}; . * $p))
+        | .[]
+      ' \
+      | jq -r '
+        @sh "raw_kind=\(.kind) paths=(\({spec}|[paths(scalars) | map(.|tostring) | join(".")]))"
+        '
+  )
+  [ -d ${provider}_v2 ] || mkdir ${provider}_v2
+  cd ${provider}_v2
+  ##### MAIN LOOP #####
+  while read line <&3
   do
-    unset kind
     eval ${line}
-    [ ${kind} ] || continue
+    [ ${raw_kind} ] || continue
 
-    cd ${provider}
-    local yaml="${kind}.yaml"
+    # TODO: Start by fetching crossplane CRD from json
+    # TODO: use fzf to select matching crossplane CRD at the start of the main while loop
+
+    local yaml="${raw_kind}.yaml"
 
     if [ -r "_missing_${yaml}" ] || \
        [ -r "_skip_${yaml}"    ] || \
        [ -r "_edit_${yaml}"    ] || \
        [ -r "${yaml}"          ]
     then
-      echo " > $(ls -1 *${yaml}) already exists; SKIPPING ${kind}"
-    #ls ${yaml} | grep --color=always "${kind}.yaml"
-    else
-      local yaml_edit="_edit_${yaml}"
-      echo -e "\n\e[44;1m>> Found ${#paths[@]} json paths in spec for ${kind} \e[0m";
-      echo " > generating ${yaml_edit}"
-      _yaml_header $kind >> ${yaml_edit}
-      for p in ${paths[@]}; do
-        _yaml_import_expand $p >> ${yaml_edit}
-      done
-      _yaml_helpful_footer >> ${yaml_edit}
-      echo " > ${yaml_edit} generated"
-      generated+=("$yaml_edit")
-      echo
+      __e -e "\n>> \e[43;1m ${raw_kind} \e[0m: SKIPPING; $(ls -1 *${yaml}) already exists"
+      continue
     fi
-    cd -
-  done < <(
-  #####
-  ./deform $1 ${provider} xr \
-     | jq -s '
-       .
-      | group_by(.kind)
-      | map(reduce .[] as $p ({}; . * $p))
-      | .[]
-    ' \
-    | jq -r '
-       @sh "kind=\(.kind) paths=(\({spec}|[paths(scalars) | map(.|tostring) | join(".")]))"
-      '
-  )
+    ####################
+    __e -e "\n>> \e[44;1m ${raw_kind} \e[0m: Found ${#paths[@]} json paths in spec";
+    __e " > finding crossplane CRD match..."
 
-  echo
-  echo "-+-+-+-+-+-+-+-+-+-+-+-+-"
-  echo " > Generated ${#generated[@]} new files."
-  echo "============ ${generated[@]}"
+    # TODO This implementation feels ugly. Bouncing back and forth
+    #  using "$group.$raw_kind" patern :/
+    local crd_match=$(_find_target_crd_for_given_raw_crd ${crd_extracted_params} ${raw_kind} ${paths[@]})
+    if [ ! ${crd_match} ]
+    then
+      ##TODO: output default header
+      ##TODO: explode paths
+      __e -e " > \e[31;1mNo match found!\e[0m"
+      continue
+    fi
 
-  if [ ${#generated[@]} -gt 0 ]
-  then
-    echo " > Press <Enter> to edit the files one by one or <Ctrl-C> to skip."
-    read
-    for f in "${generated[@]}"
+    local target_kind="$(__get_cr_element ${crd_match} kind)"
+    local target_api_version="$(__get_cr_element ${crd_match} apiVersion)"
+    local target_args=( $(__get_cr_element ${crd_match} "args|keys|.[]") )
+    local target_attrs=( $(__get_cr_element ${crd_match} "attrs|keys|.[]") )
+
+    declare -A imports
+    declare -A exports
+    local unidentified=( )
+    #XXX Collapse array-like paths first (?) For now, skip repeated paths:
+    local previous_word=""
+    for path in ${paths[@]}
     do
-      vim ${provider}/$f
-      echo "Is ${provider}/${f} ready? [y/N]"
-      read reply && {
-        if [ "$reply" == "y" ]; then
-          echo "mv ${provider}/${f} ${provider}/${f#_edit_}"
-          rm -i ${provider}/$f ###XXX
-        fi
-      }
+      #XXXXXX echo ">>>> $LINENO"
+
+      local word=$( echo "${path}" | cut -d '.' -f 2 | tr -d _ )
+      #TODO: This section really cries out for a proper programming language!
+      # We should be checking referenced object's properties instead of treating
+      # paths as strings.
+      if [ "${word}" == "${previous_word}" ]; then continue; fi
+      local arg_matches=( $(printf "%s\n" ${target_args[@]} \
+        | grep -i "\<${word}\>") )
+      local attr_matches=( $(printf "%s\n" ${target_attrs[@]} \
+        | grep -i "\<${word}\>") )
+
+      if [ ${#arg_matches[@]} -eq 1 ] # path in args
+      then
+        imports["${path}"]="${arg_matches}"
+        #echo "  from: \"${path}\""
+        #echo "  to: \"spec.forProvider.${arg_matches}\""
+      elif [ ${#attr_matches[@]} -eq 1 ] # path in attrs
+      then
+        exports["${path}"]="${attr_matches}"
+        #echo "#XXX to exports:  from: \"${path}\""
+        #echo "#XXX              at: \"status.atProvider.${attr_matches}\""
+      elif [ ${#arg_matches[@]} -gt 1 ] || [ ${#attr_matches[@]} -gt 1 ]
+      then
+        __e "#ERROR: multiple matches found for ${path}:"
+        echo "#  ARG: ${arg_matches[@]}"
+        echo "# ATTR: ${attr_matches[@]}"
+      else
+        unidentified+=( ${path} )
+      fi
+      previous_word=${word}
     done
-  fi
+
+    ##### Combine it all together ####
+    #FD4: yaml file output
+    exec 4>&1
+    exec > _edit_${yaml}
+    _yaml_header ${raw_kind} ${target_api_version} ${target_kind}
+
+    __e " > identified ${#imports[@]} argument path matches"
+    echo "imports:"
+    for k in ${!imports[@]}
+    do
+      echo "- from: \"$k\""
+      echo "  to: \"spec.forProvider.${imports[$k]}\""
+    done
+
+    __e " > identified ${#exports[@]} attribute path matches"
+    echo "#exports:"
+    for k in ${!exports[@]}
+    do
+      echo "#- from: \"$k\""
+      echo "#  at: \"status.atProvider.${exports[$k]}\""
+    done
+
+    __e " > NOTE: found ${#unidentified[@]} unidentified paths"
+    echo "#unidentified:"
+    for path in ${unidentified[@]}
+    do
+      #TODO: expand as in the previous version
+      echo "# \"${path}\""
+    done
+    ##### Close file and restore stdout before continuing ####
+    exec 1>&4 4>&-
+  done
+  # Close input:
+  exec 3>&-
+  cd - &> /dev/null
 }
 
 # cover ()
@@ -188,51 +330,13 @@ cover_stats()
   | column -t
 }
 
-#XXX pseudocode outline for utilizing docs (terraform-provider-scrape)
-#_decide_on_target ()
-#{
-#    if docs[input.type] has input.param in "args"; then
-#        output:;
-#        {
-#            - from: "spec.$input.param";
-#            to: "spec.forProvider.(toCamel input.param)"
-#        };
-#    else
-#        output:;
-#        {
-#            - from: "spec.$input.param";
-#            at: "status.atProvider.(toCamel input.param)"
-#        };
-#    fi
-#}
-#
-#
-#_find_param_candidate () #arg1: canditate_target_type
-#{
-#  get_provider_crd  canditate_target_type \
-#    | list_param_paths \
-#    | smart_grep   each param word split by "_"
-#
-##[IDEA]
-##  $ < provider-crds/aws_v0.19.0.json jq '.[]|.spec|[(.group/"."|.[0]),.names.kind]'
-## - though this includes things like
-## [
-##   "servicediscovery",
-##   "PublicDNSNamespace"
-## ]
-##
-## - it can be hard to split the camel-cased words... One would have to run
-## through the string, detect capital letters and in each case check
-## if the next letter isn't capital as well.
-#}
-
-extract_params ()
+tf_extract_provider_params ()
 {
   #TODO document usage!
   #TODO Complete the implementation. From history:
   # $ cd terraform-provider-scrape/app/terraform-provider-aws/website/docs/r/
   # ^^^ replace this with e.g. "git clone https://github.com/terraform-providers/terraform-provider-aws.git"
-  # $ time ( for f in *; do kind=${f%%.*}; extract_params $kind; done ) | jq -c > ../../../../../my-own-sed-version_1.json
+  # $ time ( for f in *; do kind=${f%%.*}; tf_extract_provider_params $kind; done ) | jq -c > ../../../../../my-own-sed-version_1.json
   local kind=$1
   [ -f ${kind}.* ] || return
   echo -n "{
@@ -295,12 +399,12 @@ select_mappings ()
           | tr '[A-Z]' '[a-z]' | tr '[],' '()|' \
           | sed -e 's/"/\\b/g'
         )
-        
+
 
         echo ">>>> grep -E \"${grep_ext_regex}\""
 
         #break #######################################
-        
+
         ## TODO make it in a single call
         echo -en "${group}.${kind}   " >> ${output}
 
@@ -325,7 +429,7 @@ select_mappings ()
                     | select(.spec.names.kind=="'${kind}'")
                     | .spec.versions[0].schema.openAPIV3Schema
                     | .properties.spec.properties
-                    | .forProvider.properties 
+                    | .forProvider.properties
                     | keys';
                 echo -e "\e[44m=> parameters in status.atProvider:\e[0m";
                 < ${crossplane_crds} \
@@ -334,7 +438,7 @@ select_mappings ()
                     | select(.spec.names.kind=="'${kind}'")
                     | .spec.versions[0].schema.openAPIV3Schema.properties
                     | .status.properties
-                    | .atProvider.properties 
+                    | .atProvider.properties
                     | keys';
                 echo -e \
                   "\n\e[44m== select best matching terraform module from below list ==\e[0m\n "
