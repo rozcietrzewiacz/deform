@@ -16,20 +16,13 @@ target:
 YAML
 }
 
-_yaml_import_expand()
-{
-  cat << YAML
-- from: "$1"
-YAML
-}
-
 _yaml_helpful_footer()
 {
   cat << 'YAML'
 ##### COPY-PASTE helpers ####
 
   to: "spec.forProvider."
-  to: "metadata."
+  at: "metadata.annotations['import.deform.io/']"
 
   transforms:
   - type: convert
@@ -102,12 +95,12 @@ _find_target_crd_for_given_raw_crd()
 
 prep_files ()
 {
+  #TODO RENAME to eg. "generate_conversion_configs"
+
   #IN1: tfstate-show json
   #IN2: provider name (e.g. "aws", "gcp")
-
   local tfstate_show=${1}
   local provider=${2-aws}
-
   #
   #TODO: derive tf provider spec and crossplane crds jsons from provider name
   #TODO: generate the above files in a standardized manner
@@ -144,17 +137,14 @@ prep_files ()
   )
   [ -d ${provider} ] || mkdir ${provider}
   cd ${provider}
+
   ##### MAIN LOOP #####
   while read line <&3
   do
     eval ${line}
     [ ${raw_kind} ] || continue
 
-    # TODO: Start by fetching crossplane CRD from json
-    # TODO: use fzf to select matching crossplane CRD at the start of the main while loop
-
     local yaml="${raw_kind}.yaml"
-
     if [ -r "_missing_${yaml}" ] || \
        [ -r "_skip_${yaml}"    ] || \
        [ -r "_edit_${yaml}"    ] || \
@@ -163,12 +153,10 @@ prep_files ()
       __e -e "\n>> \e[43;1m ${raw_kind} \e[0m: SKIPPING; $(ls -1 *${yaml}) already exists"
       continue
     fi
-    ####################
     __e -e "\n>> \e[44;1m ${raw_kind} \e[0m: Found ${#paths[@]} json paths in spec";
     __e " > finding crossplane CRD match..."
 
-    # TODO This implementation feels ugly. Bouncing back and forth
-    #  using "$group.$raw_kind" patern :/
+    # TODO This is ugly. Bouncing back and forth via "$group.$raw_kind" :/
     local crd_match=$(_find_target_crd_for_given_raw_crd ${crd_extracted_params} ${raw_kind} ${paths[@]})
     if [ ! ${crd_match} ]
     then
@@ -179,8 +167,8 @@ prep_files ()
       continue
     fi
 
-    local target_kind="$(__get_cr_element ${crd_match} kind)"
-    local target_api_version="$(__get_cr_element ${crd_match} apiVersion)"
+    local target_kind=$(__get_cr_element ${crd_match} "kind")
+    local target_api_version=$(__get_cr_element ${crd_match} "apiVersion")
     local target_args=( $(__get_cr_element ${crd_match} "args|keys|.[]") )
     local target_attrs=( $(__get_cr_element ${crd_match} "attrs|keys|.[]") )
 
@@ -208,13 +196,9 @@ prep_files ()
       if [ ${#arg_matches[@]} -eq 1 ] # path in args
       then
         imports["${path}"]="${arg_matches}"
-        #echo "  from: \"${path}\""
-        #echo "  to: \"spec.forProvider.${arg_matches}\""
       elif [ ${#attr_matches[@]} -eq 1 ] # path in attrs
       then
         exports["${path}"]="${attr_matches}"
-        #echo "#XXX to exports:  from: \"${path}\""
-        #echo "#XXX              at: \"status.atProvider.${attr_matches}\""
       elif [ ${#arg_matches[@]} -gt 1 ] || [ ${#attr_matches[@]} -gt 1 ]
       then
         __e "#ERROR: multiple matches found for ${path}:"
@@ -226,7 +210,7 @@ prep_files ()
       previous_word=${word}
     done
 
-    ##### Combine it all together ####
+    ### Combine it all together ##
     #FD4: yaml file output
     exec 4>&1
     exec > _edit_${yaml}
@@ -252,13 +236,12 @@ prep_files ()
     echo "#unidentified:"
     for path in ${unidentified[@]}
     do
-      #TODO: expand as in the previous version
-      echo "# \"${path}\""
+      echo "#- from: \"${path}\""
     done
-    ##### Close file and restore stdout before continuing ####
+    ## Close file and restore stdout before continuing ##
     exec 1>&4 4>&-
   done
-  # Close input:
+  ## Close input ##
   exec 3>&-
   cd - &> /dev/null
 }
