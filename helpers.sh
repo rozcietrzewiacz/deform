@@ -172,9 +172,10 @@ prep_files ()
     local crd_match=$(_find_target_crd_for_given_raw_crd ${crd_extracted_params} ${raw_kind} ${paths[@]})
     if [ ! ${crd_match} ]
     then
-      ##TODO: output default header
-      ##TODO: explode paths
-      __e -e " > \e[31;1mNo match found!\e[0m"
+      __e -e " > \e[31;1mNo match found! Marking as missing.\e[0m"
+      ##TODO (?) output default header
+      ##TODO (?) explode paths
+      touch "_missing_${yaml}"
       continue
     fi
 
