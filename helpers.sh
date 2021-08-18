@@ -181,7 +181,15 @@ prep_files ()
     do
       #"id" is a special parameter indicating `external-name`,
       # hardcoded in the `deform-composer`
-      if [ "${path}" == "spec.id" ]; then continue; fi
+      if [ "${path}" == "spec.id" ]
+      then
+        imports["${path}"]="metadata.annotations['crossplane.io/external-name']"
+        continue
+      elif [ "${path}" == "spec.arn" ]
+      then
+        imports["${path}"]="metadata.annotations['import.deform.io/arn']"
+        continue
+      fi
 
       local word=$( echo "${path}" | cut -d '.' -f 2 | tr -d _ )
       #TODO: This section really cries out for a proper programming language!
@@ -195,10 +203,10 @@ prep_files ()
 
       if [ ${#arg_matches[@]} -eq 1 ] # path in args
       then
-        imports["${path}"]="${arg_matches}"
+        imports["${path}"]="spec.forProvider.${arg_matches}"
       elif [ ${#attr_matches[@]} -eq 1 ] # path in attrs
       then
-        exports["${path}"]="${attr_matches}"
+        exports["${path}"]="status.atProvider.${attr_matches}"
       elif [ ${#arg_matches[@]} -gt 1 ] || [ ${#attr_matches[@]} -gt 1 ]
       then
         __e "#ERROR: multiple matches found for ${path}:"
@@ -221,7 +229,7 @@ prep_files ()
     for k in ${!imports[@]}
     do
       echo "- from: \"$k\""
-      echo "  to: \"spec.forProvider.${imports[$k]}\""
+      echo "  to: \"${imports[$k]}\""
     done
 
     __e " > identified ${#exports[@]} attribute path matches"
@@ -229,7 +237,7 @@ prep_files ()
     for k in ${!exports[@]}
     do
       echo "- from: \"$k\""
-      echo "  at: \"status.atProvider.${exports[$k]}\""
+      echo "  at: \"${exports[$k]}\""
     done
 
     __e " > NOTE: found ${#unidentified[@]} unidentified paths"
