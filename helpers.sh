@@ -183,8 +183,8 @@ prep_files ()
     local target_args=( $(__get_cr_element ${crd_match} "args|keys|.[]") )
     local target_attrs=( $(__get_cr_element ${crd_match} "attrs|keys|.[]") )
 
-    declare -A imports
-    declare -A exports
+    declare -A imports; imports=( )
+    declare -A exports; exports=( )
     local unidentified=( )
     #XXX Collapse array-like paths first (?) For now, skip repeated paths:
     local previous_word=""
