@@ -44,7 +44,7 @@ _find_target_crd_for_given_raw_crd()
   _split_camel_words()
   {
     echo $@ \
-    | sed -e 's/[A-Z][a-z0-9]/ \0/g' -E -e 's/[A-Z][A-Z]+/ \0/g' \
+    | sed -E -e 's/[A-Z][A-Z]+/ \0/g' -e 's/[A-Z][a-z0-9]/ \0/g' \
     | tr '[A-Z]' '[a-z]' | cut -d ' ' -f 3-
     # Deform's "raw crd" kind name is based on terraform module name, where
     # the first word is the provider name. Due to how the first sed expression
