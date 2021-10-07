@@ -104,8 +104,8 @@ prep_files ()
   #
   #TODO: derive tf provider spec and crossplane crds jsons from provider name
   #TODO: generate the above files in a standardized manner
-  local crd_extracted_params=$(realpath "provider-crds/extracted_params-aws_v0.19.0.json")
-  local terraform_specs=$(realpath "../terraform-provider-scrape/my-own-sed-version_1.json")
+  local crd_extracted_params=$(realpath ".cache/${provider}/xp-params_v0.19.0.json")
+  local terraform_specs=$(realpath ".cache/${provider}/tf-params_main.json")
 
   __get_cr_element()
   {
@@ -314,37 +314,6 @@ cover_stats()
   | column -t
 }
 
-tf_extract_provider_params ()
-{
-  #TODO document usage!
-  #TODO Complete the implementation. From history:
-  # $ cd terraform-provider-scrape/app/terraform-provider-aws/website/docs/r/
-  # ^^^ replace this with e.g. "git clone https://github.com/terraform-providers/terraform-provider-aws.git"
-  # $ time ( for f in *; do kind=${f%%.*}; tf_extract_provider_params $kind; done ) | jq -c > ../../../../../my-own-sed-version_1.json
-  local kind=$1
-  [ -f ${kind}.* ] || return
-  echo -n "{
-  \"kind\": \"${kind}\",
-  \"args\": ["
-  cat ${kind}.* \
-    | sed -n -e '/^##* Arguments* Ref/,/^#/p' \
-    | sed -e 's/"/\\"/g' \
-    | sed -n -E -e 's#^ *([*-] *)`([a-z][^`]*)`.*$#"\2",#p' \
-    | sort | uniq \
-    | tr '\n' ' ' \
-    | head -c-2
-  echo -n "],
-  \"attrs\": ["
-  cat ${kind}.* \
-    | sed -n -e '/^##* Attributes* Ref/,/^#/p' \
-    | sed -e 's/"/\\"/g' \
-    | sed -n -E -e 's#^ *([*-] *)`([a-z][^`]*)`.*$#"\2",#p' \
-    | sort | uniq \
-    | tr '\n' ' ' \
-    | head -c-2
-  echo "]"
-  echo "}"
-}
 
 select_mappings ()
 {
