@@ -1,7 +1,39 @@
 #!/bin/sh
 #Usage:
-# $> ./deform tfstate-output.json [root-module|child-modules] [xr|xrd]
+# $ ./deform <tfstate-output.json> <xr|xrd> [provider]
+#
+#   If 'provider' is not given, the tool will attempt to guess
+#   based on identified terraform module names
 
-< ${1} jq -f jq/from-tfstate-output_parse-modules.jq --args ${2} \
-  | jq -s -f jq/from-type+value-to-raw-${3}.jq
+INPUT=${1}
+OUT_TYPE=${2}
 
+[ -r ${INPUT} ] || exit 1
+[ "$OUT_TYPE" ] || {
+  echo "ERROR: either 'xr' or 'xrd' must be specified as output type" >/dev/stderr
+  exit 2
+}
+
+if [ "${3}" ]
+then
+  PROVIDER=${3}
+else
+  ###echo "WARNING: No provider given explicitly. Auto-selecting based on top occurences:" >/dev/stderr
+  PROVIDER=$(
+    < ${INPUT} jq -r -f jq/list-module-prefixes.jq \
+    | sort \
+    | uniq -c \
+    | sort -g --reverse \
+    | cat \
+    | head -n 1 \
+    | awk '{ print $2 }'
+  )
+  ## ^^ cat (placeholder) ==> TODO: be a tiny bit smarter: inform about the top 2 modules and their occurrence ratio
+  MSG_BOTTOM="NOTE: Results based on auto-discovered provider \"$PROVIDER\""
+fi
+
+
+< ${INPUT} jq -f jq/from-tfstate-output_parse-modules.jq --args ${PROVIDER} \
+  | jq -s -f jq/from-type+value-to-raw-${OUT_TYPE}.jq
+
+[ "$MSG_BOTTOM" ] && echo -e "\n\e[35;1m$MSG_BOTTOM\e[0m" >/dev/stderr

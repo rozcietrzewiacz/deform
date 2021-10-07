@@ -124,7 +124,7 @@ prep_files ()
 
   #FD3: MAIN LOOP INPUT
   exec 3< <(
-    ./deform ${tfstate_show} ${provider} xr \
+    ./deform ${tfstate_show} xr ${provider} \
       | jq -s '
         .
         | group_by(.kind)
@@ -264,7 +264,7 @@ cover ()
   fi
   shift
   ###XXX Consider: https://stackoverflow.com/questions/26717277/accessing-a-json-object-in-bash-associative-array-list-another-model/51690860#51690860
-  ./deform <( cat $@ ) ${provider} xr | jq '.kind' -r | sort | uniq -c | sort -g \
+  ./deform <( cat $@ ) xr ${provider} | jq '.kind' -r | sort | uniq -c | sort -g \
     | while read count kind; do
       echo -e "${kind}($count)\t$(ls ${provider}/${kind}.yaml 2>/dev/null || if [ -f ${provider}/_edit_${kind}.yaml ]; then echo -n "(WIP)"; else echo -n "(MISSING)"; fi )"
     done \
@@ -297,7 +297,7 @@ cover_stats()
   }
 
   local provider=$1
-  if [ ! ${provider} ] || [ ! -d ${provider} ]
+  if [ ! "${provider}" ] || [ ! -d "${provider}" ]
   then
     echo "Usage: $FUNCNAME <provider> FILES..."
     return
