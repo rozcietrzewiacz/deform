@@ -13,10 +13,23 @@ spec:
       metadata: {}
       spec: {}
     patches:
+    ## global:
+    {{- $providerConfig := .Values.providerConfig }}
+{{- /*
+ Below is a hack to inject static ProviderConfig reference into all composed resources
+TODO: use something like FromConstantValue once it's available
+*/}}
+    - fromFieldPath: "kind"
+      toFieldPath: "spec.providerConfigRef.name"
+      transforms:
+      - type: map
+        map:
+          {{ .Values.source.kind }}: "{{ $providerConfig }}"
     - fromFieldPath: "metadata.name"
     - fromFieldPath: "metadata.labels"
     - fromFieldPath: "spec.id"
       toFieldPath: "spec.annotations['crossplane.io/external-name']"
+    ## imports from config:
     {{- range .Values.imports }}
     - fromFieldPath: {{ .from }}
       toFieldPath: {{ .to }}
@@ -25,6 +38,7 @@ spec:
       {{- . | toYaml | nindent 6 }}
       {{- end }}
     {{- end }}
+    ## exports from config:
     {{- range .Values.exports }}
     - type: ToCompositeFieldPath ### UP
       fromFieldPath: {{ .from }}
