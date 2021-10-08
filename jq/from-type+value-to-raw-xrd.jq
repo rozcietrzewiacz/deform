@@ -88,7 +88,8 @@ def to_xrd:
       "group": "raw.import.deform.io",
       "names": {
         "kind": $kind,
-        "plural": $plural
+        "plural": $plural,
+        "categories": [ "deform" ]
       },
       "versions": [
         {
