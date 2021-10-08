@@ -8,7 +8,7 @@ _yaml_header()
   local target_kind=$3
   cat << YAML
 source:
-  apiVersion: "raw.import.tf.xxx/v1alpha1" #TODO: Come up with reasonable api name
+  apiVersion: "raw.import.deform.io/v1alpha1"
   kind: ${raw_kind}
 target:
   apiVersion: ${target_api_version}

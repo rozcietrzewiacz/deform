@@ -1,7 +1,7 @@
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
-  name: {{ lower .Values.source.kind }}.deform.import.tf.xxx
+  name: {{ lower .Values.source.kind }}.convert.deform.io
 spec:
   compositeTypeRef:
     apiVersion: {{ .Values.source.apiVersion}}

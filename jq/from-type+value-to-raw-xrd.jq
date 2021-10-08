@@ -82,10 +82,10 @@ def to_xrd:
     "apiVersion": "apiextensions.crossplane.io/v1",
     "kind": "CompositeResourceDefinition",
     "metadata": {
-      "name": ($plural + ".raw.import.tf.xxx")
+      "name": ($plural + ".raw.import.deform.io")
     },
     "spec": {
-      "group": "raw.import.tf.xxx",
+      "group": "raw.import.deform.io",
       "names": {
         "kind": $kind,
         "plural": $plural

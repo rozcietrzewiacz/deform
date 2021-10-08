@@ -27,13 +27,13 @@ def to_xr:
   | ( .type | to_kind ) as $kind
   |
   {
-    "apiVersion": "raw.import.tf.xxx/v1alpha1",
+    "apiVersion": "raw.import.deform.io/v1alpha1",
     "kind": $kind,
     "metadata": {
       "name": $k8s_name,
       "annotations": {
-        "raw.import.tf.xxx/type": .type,
-        "raw.import.tf.xxx/name": .name
+        "raw.import.deform.io/type": .type,
+        "raw.import.deform.io/name": .name
       }
     },
     "spec": .values
