@@ -92,7 +92,7 @@ populate_cache ()
     #TODO: most fit for a Makefile
     #TODO: force re-download
     [ -r ${xp_crds}/crds_${xp_tag}.json ] \
-    && \
+    || \
     curl "https://doc.crds.dev/raw/github.com/crossplane/provider-${provider}@${xp_tag}" \
     | _yaml2json \
     | jq -c '.items' \
@@ -100,7 +100,7 @@ populate_cache ()
     
 
     [ -r xp-params_${xp_tag}.json ] \
-    && \
+    || \
     < ${xp_crds}/crds_${xp_tag}.json \
       jq -c -f "${jq_dir}/transform-crossplane-crds.jq" \
     | tee \
