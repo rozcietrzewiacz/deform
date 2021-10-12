@@ -395,3 +395,87 @@ select_mappings ()
         #break #XXX
       done
 }
+
+apply_compositions()
+{
+  local MSG_BOTTOM=
+  local PROVIDER_CONFIG_NAME=${PROVIDER_CONFIG_NAME:-}
+  [ "$1" ] || {
+    echo "ERROR: You need to specifiy the provider" > /dev/stderr
+    return 1
+  }
+  local PROVIDER=${1}
+  if [ "$2" ]
+  then
+    local deformConfigs="$2"
+  else
+    echo "WARNING: No deform config file specified."
+    read -p "Itereate over all complete configs under ${PROVIDER}/? [Y/n] " re
+    case "$re" in
+      [Nn])
+        echo "Exiting"
+        return 0
+        ;;
+      *)
+        local deformConfigs="${PROVIDER}/${PROVIDER^}*.yaml"
+        ;;
+    esac
+  fi
+  ### Detecting providerConfig, if not specified ###
+  declare -a providerConfigs
+  [ "$PROVIDER_CONFIG_NAME" ] || {
+    echo "PROVIDER_CONFIG_NAME not set. Attempting auto-detect..." > /dev/stderr
+    providerConfigs=( $(
+      kubectl get ProviderConfig.${PROVIDER}.crossplane.io \
+        -o jsonpath='{.items[*].metadata.name}') )
+    if [ ${#providerConfigs[@]} -gt 1 ]
+    then
+      #TODO: TEST
+      MSG_BOTTOM+="\nWARNING: Found more than one ProviderConfigs! Using first one."
+    elif [ -z "${#providerConfigs[@]}" ]
+    then
+      #TODO: TEST
+      MSG_BOTTOM+="\nWARNING: No ProviderConfig.${PROVIDER}.crossplane.io found"
+    fi
+    PROVIDER_CONFIG_NAME="${providerConfigs[0]}"
+    MSG_BOTTOM+="\nGuessed ProviderConfig name: \"${PROVIDER_CONFIG_NAME}\". To skip auto-detection next time, run:\nexport PROVIDER_CONFIG_NAME=\"${PROVIDER_CONFIG_NAME}\""
+  }
+
+  tmpCompositions=$(mktemp .cache/compositions_XXXX.yaml)
+  local counter=0
+  for config in $deformConfigs
+  do
+    local sourceName=${config#*/}
+    sourceName=${sourceName%.yaml}
+
+    # Not very clear, since helm outputs '---' at the start: echo "###### ${config}"
+    helm template \
+      "deform-${sourceName}" \
+      deform-composer/ \
+      --values=${config} \
+      --set providerConfig=${PROVIDER_CONFIG_NAME}
+    if [ $? -eq 0 ]
+    then
+      counter=$[ counter + 1 ]
+    else
+      echo "### ERROR encountered in $config" > /dev/stderr
+    fi
+  done > ${tmpCompositions}
+  MSG_BOTTOM+="\nGenerated ${counter} compositions."
+
+  kubectl apply -f "${tmpCompositions}"
+  if [ $? -eq 0 ]
+  then
+    echo "Compositions applied successfully." > /dev/stderr
+    if [ "${DEBUG}" ]
+    then
+      echo "DEBUG enabled. Leaving "${tmpCompositions}" for inspection." > /dev/stderr
+    else
+      rm "${tmpCompositions}"
+    fi
+  else
+    MSG_BOTTOM+="\nFAILED to apply compositions. ${tmpCompositions} file left for manual inspection."
+  fi
+
+  [ "$MSG_BOTTOM" ] && echo -e "\e[35;1m$MSG_BOTTOM\e[0m"
+}
