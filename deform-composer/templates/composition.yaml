@@ -25,6 +25,14 @@ TODO: use something like FromConstantValue once it's available
       - type: map
         map:
           {{ .Values.source.kind }}: "{{ $providerConfig }}"
+    {{- with .Values.deletionPolicy }}
+    - fromFieldPath: "kind"
+      toFieldPath: "spec.deletionPolicy"
+      transforms:
+      - type: map
+        map:
+          {{ .Values.source.kind }}: "{{ . }}"
+    {{- end }}
     - fromFieldPath: "metadata.name"
     - fromFieldPath: "metadata.labels"
     - fromFieldPath: "spec.id"
