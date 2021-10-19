@@ -2,6 +2,8 @@ apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
   name: {{ lower .Values.source.kind }}.convert.deform.io
+  labels:
+    deform: convert
 spec:
   compositeTypeRef:
     apiVersion: {{ .Values.source.apiVersion}}
