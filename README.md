@@ -1,21 +1,35 @@
 
 # Workflow
 
-1. [2b auto] Convert the state file into the standardized output format: `terraform show -json > in/my_tf_module-tf-show.json`. You can now delete `here.tfstate.json`.
-1. Generate "raw XRDs" for your terraform resources using `deform`: 
+1. [2b auto] Pull your terraform state to a local file
 ```
-./deform in/my_tf_module-tf-show.json xrd aws | kubectl apply -f -
+terraform state pull > here.tfstate.json
 ```
-1. Create "raw XRs" that represent 1-to-1 your terraform resources:
+
+1. [2b auto] Convert the state file into the standardized "show" format
 ```
-./deform in/my_tf_module-tf-show.json xr aws | kubectl apply -f -
+terraform show -json here.tfstate.json > in/my_tf_module-tf-show.json
 ```
-1. [2b auto] Apply Compositions converting your "raw XRs" into Crossplane provider resources:
+(You can now delete `here.tfstate.json`)
+
+1. Make sure you have the necessary conversion configs for your `PROVIDER`, e.g.
+
 ```
-helm template deform-role deform-composer/ --values=aws/AwsIamRole.yaml | kubectl apply -f -
-helm template deform-policy deform-composer/ --values= aws/AwsIamPolicy.yaml | kubectl apply -f -
-helm template deform-role-policy-attcmnt deform-composer/ --values=aws/AwsIamRolePolicyAttachment.yaml | kubectl apply -f -
-...
+ls -l aws/
+```
+
+1. Call `deform` to generate manifests from your terraform module:
+```
+./deform in/my_tf_module-tf-show.json
+```
+
+1. **Inspect** and then apply the generated manifests. This can be also done automatically in previous step, if oyu set `AUTOAPPLY` env variable to any value while calling `deform` in previous step.
+```
+kubectl apply -f out/path_reported_by_deform_in_previous_step/xrds
+# inspect...
+kubectl apply -f out/path_reported_by_deform_in_previous_step/xrs
+# inspect...
+kubectl apply -f out/path_reported_by_deform_in_previous_step/compositions
 ```
    **Note: If you have configured your crossplane provider properly, the cloud resources you have imported with `deform` will now be controlled by the crossplane provider controller.**
 
