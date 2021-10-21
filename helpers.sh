@@ -307,7 +307,7 @@ cover_stats()
   do
     #TODO: Optimize - remove second invocation of "cover"
     cover ${provider} $f \
-    | echo ">> ${f} $(grep -cE '(.yaml$|WIP)')/$( cover ${provider} ${f} | wc -l  )" \
+    | echo ">> ${f} $(grep -cE '(.yaml$)')/$( cover ${provider} ${f} | wc -l  )" \
     | colorize BLUE '>>' \
     | sed -E 's#[^0-9]([0-9]+)/\1#[34;1m\0\t(ALL!)[0m#g'
   done \
