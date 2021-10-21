@@ -33,7 +33,7 @@ TODO: use something like FromConstantValue once it's available
       transforms:
       - type: map
         map:
-          {{ .Values.source.kind }}: "{{ . }}"
+          {{ $.Values.source.kind }}: "{{ . }}"
     {{- end }}
     - fromFieldPath: "metadata.name"
     - fromFieldPath: "metadata.labels"
