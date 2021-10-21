@@ -73,7 +73,7 @@ def merge_same_types:
 ;
 
 def to_xrd:
-  .name as $name
+  . #XXX sure it's not used??? name as $name
   | ( .type | to_kind ) as $kind
   | ( $kind | to_singular ) as $singular
   | ( $singular | to_plural ) as $plural

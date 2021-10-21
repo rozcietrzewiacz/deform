@@ -5,7 +5,7 @@ def to_kind:
   sub("(?<x>[a-z])"; .x | ascii_upcase) | camel;
 
 def k8s_name:
-  gsub("_";"-") | ascii_downcase;
+  gsub("(.*[:/])*(?<x>[A-Za-z0-9])"; .x) | gsub("_";"-") | ascii_downcase;
 
 def cleanup:
   walk(
@@ -13,6 +13,7 @@ def cleanup:
       with_entries(
         select(
           #TODO: allow selecting whether or not empty strings should be omitted
+          #TODO: utilize "scalars" builtin
           .value != null and .value != [] and .value !={} and .value != ""
         )
       )
@@ -23,8 +24,9 @@ def cleanup:
 ;
 
 def to_xr:
-  (.name | k8s_name) as $k8s_name
+  .
   | ( .type | to_kind ) as $kind
+  | ( .values.id | k8s_name) as $k8s_name
   |
   {
     "apiVersion": "raw.import.deform.io/v1alpha1",
