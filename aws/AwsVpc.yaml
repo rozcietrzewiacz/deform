@@ -1,0 +1,44 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsVpc
+target:
+  apiVersion: ec2.aws.crossplane.io/v1beta1
+  kind: VPC
+imports:
+- from: "spec.id"
+  to: "spec.annotations['crossplane.io/external-name']"
+- from: "spec.arn"
+  #XXX TODO: REPLACE EVERYWHERE: "metadata.annotations['arn']"
+  to: "metadata.annotations['import.deform.io/arn']"
+
+- from: "spec.cidr_block"
+  to: "spec.forProvider.cidrBlock"
+- from: "spec.enable_dns_support"
+  to: "spec.forProvider.enableDnsSupport"
+- from: "spec.instance_tenancy"
+  to: "spec.forProvider.instanceTenancy"
+- from: "spec.tags"
+  to: "spec.forProvider.tags"
+
+exports:
+- from: "spec.owner_id"
+  at: "status.atProvider.ownerId"
+- from: "spec.dhcp_options_id"
+  at: "status.atProvider.dhcpOptionsId"
+- from: "spec.ipv6_association_id"
+  at: "status.atProvider.ipv6AssociationId"
+
+########### TODO: STATUSES
+#- from: "spec.tags_all.Environment"
+#- from: "spec.tags_all.Name"
+#- from: "spec.tags_all.kubernetes.io/cluster/mx-preview-accp"
+#- from: "spec.dhcp_options_id"
+#- from: "spec.owner_id"
+#
+#XXX MISSING/CHECK(LIVE):
+#- from: "spec.main_route_table_id"
+#- from: "spec.default_network_acl_id"
+#- from: "spec.default_route_table_id"
+#- from: "spec.default_security_group_id"
+#- from: "spec.ipv6_cidr_block"
+#

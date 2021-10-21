@@ -1,0 +1,60 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsEksCluster
+target:
+  apiVersion: eks.aws.crossplane.io/v1beta1
+  kind: Cluster
+imports:
+- from: "spec.id"
+  #XXX "spec.name"
+  to: "spec.annotations['crossplane.io/external-name']"
+- from: "spec.arn"
+  to: "metadata.annotations['import.deform.io/arn']"
+- from: "spec.version"
+  to: "spec.forProvider.version"
+- from: "spec.role_arn"
+  to: "spec.forProvider.roleArn"
+  #XXX compare: roleArnRef & roleArnSelector
+
+- from: "spec.vpc_config[0].public_access_cidrs"
+  to: "spec.forProvider.resourcesVpcConfig.publicAccessCidrs"
+- from: "spec.vpc_config[0].subnet_ids"
+  to: "spec.forProvider.resourcesVpcConfig.subnetIds"
+  #XXX compare: subnetIdRefs and subnetIdSelector
+- from: "spec.vpc_config[0].security_group_ids"
+  to: "spec.forProvider.resourcesVpcConfig.securityGroupIds"
+  #XXX compare: securityGroupIdRefs and securityGroupIdSelector
+- from: "spec.enabled_cluster_log_types"
+  to: "spec.forProvider.logging.clusterLogging[0].types"
+  #XXX ^^^^ Why is `clusterLogging` an array here?
+- from: "spec.tags"
+  to: "spec.forProvider.tags"
+
+- from: "spec.created_at"
+  to: "metadata.annotations['created_at']"
+- from: "spec.timeouts.create"
+  to: "metadata.annotations['timeouts.create']"
+- from: "spec.timeouts.delete"
+  to: "metadata.annotations['timeouts.delete']"
+- from: "spec.vpc_config[0].endpoint_public_access"
+  to: "metadata.annotations['vpc_config_0_/endpoint_public_access']"
+- from: "spec.certificate_authority[0].data"
+  to: "metadata.annotations['certificate_authority_0_/data']"
+- from: "spec.kubernetes_network_config[0].service_ipv4_cidr"
+  to: "metadata.annotations['kubernetes_network_config_0_/service_ipv4_cidr']"
+
+exports:
+- from: "spec.status"
+  at: "status.atProvider.status"
+- from: "spec.identity[0].oidc[0].issuer"
+  at: "status.atProvider.identity.issuer"
+- from: "spec.endpoint"
+  at: "status.atProvider.endpoint"
+- from: "spec.created_at"
+  at: "status.atProvider.createdAt"
+- from: "spec.platform_version"
+  at: "status.atProvider.platformVersion"
+- from: "spec.vpc_config[0].cluster_security_group_id"
+  at: "status.atProvider.resourcesVpcConfig.clusterSecurityGroupId"
+- from: "spec.vpc_config[0].vpc_id"
+  at: "status.atProvider.resourcesVpcConfig.vpcId"

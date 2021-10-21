@@ -1,0 +1,36 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsEcrRepository
+target:
+  apiVersion: ecr.aws.crossplane.io/v1alpha1
+  kind: Repository
+imports:
+- from: "spec.arn"
+  to: "metadata.annotations['import.deform.io/arn']"
+
+- from: "spec.image_tag_mutability"
+  to: "spec.forProvider.imageTagMutability"
+
+#XXX VERIFY XXX
+- from: "spec.name"
+  to: "metadata.name"
+#???  to: "spec.forProvider.name"
+
+
+#???????????????????????? region is REQUIRED at target!
+#- from: ??????
+#  to: "spec.forProvider.region"
+
+###XXX MISSING
+#- from: "spec.encryption_configuration.0.encryption_type"
+#- from: "spec.encryption_configuration.0.kms_key"
+#
+####
+#TODO: Setup upword path, e.g.: 
+#exports:
+#- from: "spec.arn"
+#  at: "status.atProvider.repositoryArn"
+#- from: "spec.repository_url"
+#  at: "status.atProvider.repositoryUri"
+#- from: "spec.registry_id"
+#  to: "status.atProvider.registryId"

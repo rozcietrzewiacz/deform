@@ -1,0 +1,72 @@
+source:
+  provider:
+    package: deform
+    version: master
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsS3Bucket
+target:
+  provider:
+    package: provider-aws
+    version: v0.18.0
+  apiVersion: s3.aws.crossplane.io/v1beta1
+  kind: Bucket
+imports:
+- from: "spec.bucket"
+  # same as: - from: "spec.id"
+  to: "spec.annotations['crossplane.io/external-name']"
+- from: "spec.bucket_domain_name"
+  to: "spec.annotations['bucket_domain_name']"
+- from: "spec.bucket_regional_domain_name"
+  to: "spec.annotations['bucket_regional_domain_name']"
+- from: "spec.arn"
+  to: "metadata.annotations['arn']"
+- from: "spec.hosted_zone_id"
+  to: "spec.annotations['hosted_zone_id']"
+
+- from: "spec.acl"
+  to: "spec.forProvider.acl"
+- from: "spec.force_destroy"
+  to: "spec.deletionPolicy"
+  transforms:
+  - type: convert
+    convert:
+      toType: string
+  - map:
+      "false": "Orphan"
+      "true": "Delete"
+    type: map
+- from: "spec.region"
+  to: "spec.forProvider.locationConstraint"
+- from: "spec.request_payer"
+  to: "spec.forProvider.paymentConfiguration.payer"
+- from: "spec.acceleration_status"
+  #TODO: Check if (how) an empty value here works!
+  to: "spec.forProvider.accelerateConfiguration.status"
+
+- from: "spec.versioning[0].enabled"
+  to: "spec.forProvider.versioningConfiguration.status"
+  transforms:
+  - type: convert
+    convert:
+      toType: string
+  - map:
+      "true": "Enabled"
+      "false": "Suspended"
+    type: map
+- from: "spec.versioning[0].mfa_delete" #XXX The translation of this one is unclear
+  to: "spec.forProvider.versioningConfiguration.mfaDelete"
+  transforms:
+  - type: convert
+    convert:
+      toType: string
+  - map:
+      "true": "Enabled"
+      "false": "Disabled"
+    type: map
+
+###################################################################
+#TODO: server_side_encryption_configuration 
+# (to: "spec.forProvider.serverSideEncryptionConfiguration")
+# - This has "rules", where - objects need to be expanded
+#??? - from: "spec.versioning.enabled" ??=> versioningConfiguration.status
+#

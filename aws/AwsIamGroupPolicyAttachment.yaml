@@ -1,0 +1,25 @@
+source:
+  provider:
+    #TODO: Unused. Validate concept.
+    package: deform
+    version: master
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsIamGroupPolicyAttachment
+target:
+  provider:
+    #TODO: Unused. Validate concept.
+    package: provider-aws
+    version: v0.18.0
+  apiVersion: identity.aws.crossplane.io/v1alpha1
+  kind: IAMGroupPolicyAttachment
+imports:
+- from: "metadata.name" # XXX ??? check
+  to: "spec.annotations['crossplane.io/external-name']"
+- from: "spec.policy_arn"
+  to: "spec.forProvider.policyArn"
+#TODO: Determine (HOW?) whether we can use spec.forProvider.policyArnRef instead,
+#based on the contents of other modules in the same tf state.
+- from: "spec.group"
+  to: "spec.forProvider.groupName"
+#TODO: Determine (HOW?) whether we can use spec.forProvider.groupNameRef instead,
+#based on the contents of other modules in the same tf state.

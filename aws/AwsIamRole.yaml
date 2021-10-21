@@ -1,0 +1,53 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsIamRole
+target:
+  apiVersion: identity.aws.crossplane.io/v1beta1
+  kind: IAMRole
+imports:
+- from: "spec.id"
+  #TODO: "spec.name" is  the same
+  to: "spec.annotations['crossplane.io/external-name']"
+- from: "spec.unique_id"
+  to: "metadata.annotations['unique_id']"
+- from: "spec.arn"
+  to: "metadata.annotations['arn']"
+- from: "spec.create_date"
+  to: "metadata.annotations['create_date']"
+- from: "spec.assume_role_policy"
+  to: "spec.forProvider.assumeRolePolicyDocument"
+- from: "spec.description"
+  to: "spec.forProvider.description"
+- from: "spec.max_session_duration"
+  to: "spec.forProvider.maxSessionDuration"
+- from: "spec.path"
+  to: "spec.forProvider.path"
+
+#XXX DOESN'T WORK, because the 'from' is object (k-v map), while 'to' is an array [{key,value}]
+#- from: "spec.tags"
+#  to: "spec.forProvider.tags"
+
+
+######## 
+# TODO: -from: "spec.managed_policy_arns.0"
+#
+###### TODO: createChildren concept
+#- from: "spec.inline_policy[0]" #TODO: iterate over all
+#  createChildren:
+#  - kind: IAMPolicy
+#    apiVersion: identity.aws.crossplane.io/v1alpha1
+#    metadata:
+#      name: {{ .name }} ### XXX Hmmm?
+#    spec:
+#      forProvider:
+#        name: {{ .name }} # required
+#        document: {{ .policy }} # required  
+#  - kind: IAMRolePolicyAttachment
+#    apiVersion: identity.aws.crossplane.io/v1beta1
+#    metadata: 
+#      name: {{ .name }}
+#    spec:
+#      forProvider:
+#        policyArn: ## XXX obtain from above sibling 
+#        # - or (better?) use policyArnSelector and set unique labels (on both)
+#        roleName: $metadata.name #XXX ref to parent

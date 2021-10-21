@@ -1,0 +1,17 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsEcrRepositoryPolicy
+target:
+  apiVersion: ecr.aws.crossplane.io/v1alpha1
+  kind: RepositoryPolicy
+imports:
+- from: "spec.id"
+  to: "spec.annotations['crossplane.io/external-name']"
+
+- from: "spec.policy"
+  to: "spec.forProvider.rawPolicy"
+- from: "spec.registry_id"
+  to: "spec.forProvider.registryId"
+- from: "spec.repository"
+  to: "spec.forProvider.repositoryName"
+  #XXX compare: repositoryNameRef and repositoryNameSelector

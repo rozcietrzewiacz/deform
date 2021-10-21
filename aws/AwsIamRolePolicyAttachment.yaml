@@ -1,0 +1,19 @@
+source:
+  provider:
+    package: deform
+    version: master
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsIamRolePolicyAttachment
+target:
+  provider:
+    package: provider-aws
+    version: v0.18.0
+  apiVersion: identity.aws.crossplane.io/v1beta1
+  kind: IAMRolePolicyAttachment
+imports:
+- from: "spec.id"
+  to: "spec.annotations['crossplane.io/external-name']"
+- from: "spec.policy_arn"
+  to: "spec.forProvider.policyArn"
+- from: "spec.role"
+  to: "spec.forProvider.roleName"

@@ -1,0 +1,47 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsRoute53Record
+target:
+  apiVersion: route53.aws.crossplane.io/v1alpha1
+  kind: ResourceRecordSet
+imports:
+# /required/
+- from: "spec.type"
+  to: "spec.forProvider.type"
+- from: "spec.name"
+  to: "metadata.annotations['external-name']"
+# /crucial/
+- from: "spec.zone_id"
+  to: "spec.forProvider.zoneId"
+- from: "spec.records[0]"
+  to: "spec.forProvider.resourceRecords[0].value"
+- from: "spec.records[1]"
+  to: "spec.forProvider.resourceRecords[1].value"
+- from: "spec.records[2]"
+  to: "spec.forProvider.resourceRecords[2].value"
+- from: "spec.records[3]"
+  to: "spec.forProvider.resourceRecords[3].value"
+- from: "spec.records[4]"
+  to: "spec.forProvider.resourceRecords[4].value"
+- from: "spec.records[5]"
+  to: "spec.forProvider.resourceRecords[5].value"
+- from: "spec.records[6]"
+  to: "spec.forProvider.resourceRecords[6].value"
+- from: "spec.records[7]"
+  to: "spec.forProvider.resourceRecords[7].value"
+- from: "spec.records[8]"
+  to: "spec.forProvider.resourceRecords[8].value"
+- from: "spec.records[9]"
+  to: "spec.forProvider.resourceRecords[9].value"
+- from: "spec.set_identifier"
+  to: "spec.forProvider.setIdentifier"
+- from: "spec.ttl"
+  to: "spec.forProvider.ttl"
+# /optional/
+- from: "spec.health_check_id"
+  to: "spec.forProvider.healthCheckId"
+# /leftover/
+- from: "spec.fqdn"
+  to: "metadata.annotations['fqdn']"
+- from: "spec.id"
+  to: "metadata.annotations[id]"
