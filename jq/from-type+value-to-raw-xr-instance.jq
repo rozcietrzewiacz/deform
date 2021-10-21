@@ -35,7 +35,8 @@ def to_xr:
       "name": $k8s_name,
       "annotations": {
         "raw.import.deform.io/type": .type,
-        "raw.import.deform.io/name": .name
+        "raw.import.deform.io/name": .name,
+        "raw.import.deform.io/address": .address
       }
     },
     "spec": .values

@@ -4,36 +4,210 @@
 #
 #   If 'provider' is not given, the tool will attempt to guess
 #   based on identified terraform module names
+#
+#TODO: use getopts
+#TODO: params, such as --only-supported, --debug
 
-INPUT=${1}
-OUT_TYPE=${2}
+#_json2yaml()
+#{
+#  KUBECONFIG= kubectl apply --dry-run="client" --validate=false --record=false -o yaml -f -
+#}
 
-[ -r ${INPUT} ] || exit 1
-[ "$OUT_TYPE" ] || {
-  echo "ERROR: either 'xr' or 'xrd' must be specified as output type" >/dev/stderr
-  exit 2
+prepare()
+{
+  ## globals ##
+  INPUT=
+  PROVIDER=
+  OUT_DIR=
+  MSG_BOTTOM=
+  SUPPORTED_JSON=
+  declare -g -A USED
+  #############
+
+  INPUT=${1}
+  ## TODO: add basic helpers, such as usage() and die()
+  [ -r ${INPUT} ] || exit 1
+
+  if [ "${2}" ]
+  then
+    PROVIDER_JSON=${2}
+  else
+    ###echo "WARNING: No provider given explicitly. Auto-selecting based on top occurences:" >/dev/stderr
+    PROVIDER=$(
+      < ${INPUT} jq -r -f jq/list-module-prefixes.jq \
+      | sort \
+      | uniq -c \
+      | sort -g --reverse \
+      | cat \
+      | head -n 1 \
+      | awk '{ print $2 }'
+    )
+    ## ^^ cat (placeholder) ==> TODO: be a tiny bit smarter: inform about the top 2 modules and their occurrence ratio
+    MSG_BOTTOM="NOTE: Results based on auto-discovered provider \"$PROVIDER\""
+  fi
+
+  #TODO: Ask if the user wants to continue if there are no configs for PROVIDER
+  #TODO: This whole filtering method feels overly complicated. Simplify.
+  local supportedArray=( ${PROVIDER}/${PROVIDER^}*.yaml )
+  supportedArray=( ${supportedArray[@]%.yaml} )
+  supportedArray=( ${supportedArray[@]#${PROVIDER}/} )
+  #supportedArray=( "${supportedArray[@]}" )
+  SUPPORTED_JSON=$( printf ",\"%s\"" "${supportedArray[@]}" )
+  SUPPORTED_JSON=${SUPPORTED_JSON:1}
+  echo -e "Supported objects for $PROVIDER:\n${SUPPORTED_JSON}"
+
+  OUT_DIR="out/${INPUT#*/}"
+  echo "Files will be generated in ${OUT_DIR}/" >/dev/stderr
+  mkdir -p ${OUT_DIR}/{xr,xrd,composition}s
 }
 
-if [ "${3}" ]
-then
-  PROVIDER=${3}
-else
-  ###echo "WARNING: No provider given explicitly. Auto-selecting based on top occurences:" >/dev/stderr
-  PROVIDER=$(
-    < ${INPUT} jq -r -f jq/list-module-prefixes.jq \
-    | sort \
-    | uniq -c \
-    | sort -g --reverse \
-    | cat \
-    | head -n 1 \
-    | awk '{ print $2 }'
+extract()
+{
+  echo
+  filter()
+  {
+    if [ "$1" == "xr" ]
+    then
+      ##TODO: use --argjson instead
+      jq -c \
+        --argjson supported "[${SUPPORTED_JSON}]" \
+        'select(
+          .kind as $k
+          | ( $supported
+              | any( . == $k )
+            )
+        )'
+    else
+      cat
+    fi
+    ## OR do that later, in bash, and count the coverage:
+    # if [[ " ${array[*]} " =~ " ${value} " ]]; then
+    #   ...
+    # fi
+  }
+  local outType=${1}
+  ### XXX NOT filtering here: --argjson supported "[${SUPPORTED_JSON}]" \
+  exec 3< <(
+    < ${INPUT} jq -f jq/from-tfstate-output_parse-modules.jq \
+      --arg provider ${PROVIDER} \
+    | jq -s -f jq/from-type+value-to-raw-${outType}.jq -c \
+    | filter $outType
   )
-  ## ^^ cat (placeholder) ==> TODO: be a tiny bit smarter: inform about the top 2 modules and their occurrence ratio
-  MSG_BOTTOM="NOTE: Results based on auto-discovered provider \"$PROVIDER\""
-fi
+
+  while read -r json <&3
+  do
+    jsonName=${outType}s/$( <<< "${json}" jq -r '.kind+"."+.metadata.name' ).json
+    echo ${jsonName} > /dev/stderr
+    local kind=$(<<< "${json}" jq -r '.kind')
+    #Could be anything, but using value as key spares us looking at ${!USED[@]} later
+    USED["$kind"]="$kind"
+    [ -r "${OUT_DIR}/${jsonName}" ] && {
+      echo "ERROR: ${OUT_DIR}/${jsonName} already exists! exiting."
+      exec 3>&-
+      exit 2
+    }
+    <<< "${json}" jq > "${OUT_DIR}/${jsonName}" || {
+      echo -e "\n ERROR in json:\n${json}" > /dev/stderr
+      exec 3>&-
+      exit 3
+    }
+  done
+  exec 3>&-
+  unset USED[CompositeResourceDefinition]
+  #Oh, don't ask... It's a hack that allows to reuse this function for both
+  # xrd and xr extraction, while only listing the XRs in USED array. Sorry.
+}
+
+decompose()
+{
+  echo
+  local PROVIDER_CONFIG_NAME=${PROVIDER_CONFIG_NAME:-}
+  if [ "$1" ]
+  then
+    local deformConfigs="$1"
+  else
+    local deformConfigs="${PROVIDER}/${PROVIDER^}*.yaml"
+  fi
+  ### Detecting providerConfig, if not specified ###
+  declare -a providerConfigs
+  [ "$PROVIDER_CONFIG_NAME" ] || {
+    echo " >> PROVIDER_CONFIG_NAME not set. Attempting auto-detect..." > /dev/stderr
+    providerConfigs=( $(
+      kubectl get ProviderConfig.${PROVIDER}.crossplane.io \
+        -o jsonpath='{.items[*].metadata.name}') )
+    if [ ${#providerConfigs[@]} -gt 1 ]
+    then
+      #TODO: TEST
+      MSG_BOTTOM+="\nWARNING: Found more than one ProviderConfigs! Using first one."
+    elif [ -z "${#providerConfigs[@]}" ]
+    then
+      #TODO: TEST
+      MSG_BOTTOM+="\nWARNING: No ProviderConfig.${PROVIDER}.crossplane.io found"
+    fi
+    #TODO: Clean structure: if just 1!
+    PROVIDER_CONFIG_NAME="${providerConfigs[0]}"
+    MSG_BOTTOM+="\nGuessed ProviderConfig name: \"${PROVIDER_CONFIG_NAME}\". To skip auto-detection next time, run:\nexport PROVIDER_CONFIG_NAME=\"${PROVIDER_CONFIG_NAME}\""
+  }
+
+  local counter=0
+  for config in $deformConfigs
+  do
+    local sourceName=${config#*/}
+    sourceName=${sourceName%.yaml}
+
+    [ "${USED[${sourceName}]}" ] || {
+      echo "> $sourceName unused. Skipping."
+      continue
+    }
+
+    # Not very clear, since helm outputs '---' at the start: echo "###### ${config}"
+    helm template \
+      "deform-${sourceName}" \
+      deform-composer/ \
+      --values=${config} \
+      --set providerConfig=${PROVIDER_CONFIG_NAME} \
+    > ${OUT_DIR}/compositions/${sourceName}.yaml
+    echo compositions/${sourceName}.yaml > /dev/stderr
+    if [ $? -eq 0 ]
+    then
+      counter=$[ counter + 1 ]
+    else
+      echo "### ERROR encountered in $config" > /dev/stderr
+    fi
+  done
+  MSG_BOTTOM+="\nGenerated ${counter} compositions."
+}
+
+apply_all()
+{
+  for component in xrds xrs compositions
+  do
+    #XXX FILTER with ${SUPPORTED_JSON} HERE??
+    kubectl apply -f "${OUT_DIR}/${component}/"
+    if [ $? -eq 0 ]
+    then
+      local msg="ERROR encountered while applying ${component}"
+      MSG_BOTTOM+="\n${msg}"
+      echo "${msg}" >/dev/stderr
+    fi
+  done
+}
+
+cleanup()
+{
+  [ "$MSG_BOTTOM" ] && echo -e "\n\e[35;1m$MSG_BOTTOM\e[0m" >/dev/stderr
+}
 
 
-< ${INPUT} jq -f jq/from-tfstate-output_parse-modules.jq --args ${PROVIDER} \
-  | jq -s -f jq/from-type+value-to-raw-${OUT_TYPE}.jq
+####### MAIN #######
+## TODO: tf prep stages:
+### $ terraform state pull > here.tfstate.json
+### $ terraform show -json here.tfstate.json | jq > in/......
 
-[ "$MSG_BOTTOM" ] && echo -e "\n\e[35;1m$MSG_BOTTOM\e[0m" >/dev/stderr
+prepare "$@"
+extract xrd
+extract xr
+decompose
+[ "$AUTOAPPLY" ] && apply_all
+cleanup
+

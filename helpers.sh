@@ -398,6 +398,7 @@ select_mappings ()
 
 apply_compositions()
 {
+  ## TODO: Cleanup. Most (check!) of the functionality is moved to deform itself
   local MSG_BOTTOM=
   local PROVIDER_CONFIG_NAME=${PROVIDER_CONFIG_NAME:-}
   [ "$1" ] || {
