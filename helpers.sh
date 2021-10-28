@@ -104,7 +104,7 @@ prep_files ()
   #
   #TODO: derive tf provider spec and crossplane crds jsons from provider name
   #TODO: generate the above files in a standardized manner
-  local crd_extracted_params=$(realpath ".cache/${provider}/xp-params_v0.19.0.json")
+  local crd_extracted_params=$(realpath ".cache/${provider}/xp-params_v*.json")
   local terraform_specs=$(realpath ".cache/${provider}/tf-params_main.json")
 
   __get_cr_element()
@@ -124,7 +124,9 @@ prep_files ()
 
   #FD3: MAIN LOOP INPUT
   exec 3< <(
-    ./deform ${tfstate_show} xr ${provider} \
+    < ${tfstate_show} jq -f jq/from-tfstate-output_parse-modules.jq \
+      --arg provider ${provider} \
+      | jq -s -f jq/from-type+value-to-raw-xr.jq \
       | jq -s '
         .
         | group_by(.kind)

@@ -1,6 +1,6 @@
 #!/bin/sh
 #Usage:
-# $ ./deform <tfstate-output.json> <xr|xrd> [provider]
+# $ ./deform <tfstate-output.json> [provider]
 #
 #   If 'provider' is not given, the tool will attempt to guess
 #   based on identified terraform module names
