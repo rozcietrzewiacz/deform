@@ -1,0 +1,55 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsSecurityGroup
+target:
+  apiVersion: ec2.aws.crossplane.io/v1beta1
+  kind: SecurityGroup
+imports:
+- from: "spec.id"
+  to: "metadata.annotations['crossplane.io/external-name']"
+- from: "spec.arn"
+  to: "metadata.annotations['import.deform.io/arn']"
+- from: "spec.vpc_id"
+  to: "spec.forProvider.vpcId"
+- from: "spec.description"
+  to: "spec.forProvider.description"
+- from: "spec.name"
+  to: "spec.forProvider.groupName"
+  
+- ## XXX Caution: A little bit of guesswork at play here!
+  from: "spec.egress[0].cidr_blocks[0]"
+  to: "spec.forProvider.egress[0].ipRanges[0].cidrIp"
+  ## Uh-oh... According to documentation, the above can be EITHER a CIDR or a source securityGroup!
+  # Thus it should be an effect of a merge(?) of `egress[0].cidr_blocks[0]` with `egress[0].security_groups[0]`
+- from: "spec.egress[0].description"
+  to: "spec.forProvider.egress[0].ipRanges[0].description"
+- from: "spec.egress[0].from_port"
+  to: "spec.forProvider.egress[0].fromPort"
+- from: "spec.egress[0].to_port"
+  to: "spec.forProvider.egress[0].toPort"
+- from: "spec.egress[0].protocol"
+  to: "spec.forProvider.egress[0].ipProtocol"
+
+- ## XXX Caution: A little bit of guesswork at play here!
+  from: "spec.ingress[0].cidr_blocks[0]"
+  to: "spec.forProvider.ingress[0].ipRanges[0].cidrIp"
+  ## Uh-oh... According to documentation, the above can be EITHER a CIDR or a source securityGroup!
+  # Thus it should be an effect of a merge(?) of `ingress[0].cidr_blocks[0]` with `ingress[0].security_groups[0]`
+- from: "spec.ingress[0].security_groups[0]"
+  # XXX Let's see if this works for the above problem...
+  to: "spec.forProvider.ingress[0].ipRanges[0].cidrIp"
+- from: "spec.ingress[0].description"
+  to: "spec.forProvider.ingress[0].ipRanges[0].description"
+- from: "spec.ingress[0].from_port"
+  to: "spec.forProvider.ingress[0].fromPort"
+- from: "spec.ingress[0].to_port"
+  to: "spec.forProvider.ingress[0].toPort"
+- from: "spec.ingress[0].protocol"
+  to: "spec.forProvider.ingress[0].ipProtocol"
+
+#XXX - from: "spec.tags.Tenant"
+#  to: "spec.forProvider.tags"
+
+exports:
+- from: "spec.owner_id"
+  at: "status.atProvider.ownerId"

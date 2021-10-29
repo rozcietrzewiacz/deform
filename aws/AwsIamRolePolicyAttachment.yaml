@@ -7,7 +7,7 @@ source:
 target:
   provider:
     package: provider-aws
-    version: v0.18.0
+    version: v0.20.0
   apiVersion: identity.aws.crossplane.io/v1beta1
   kind: IAMRolePolicyAttachment
 imports:

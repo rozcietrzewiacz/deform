@@ -1,0 +1,22 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsSnsTopic
+target:
+  apiVersion: notification.aws.crossplane.io/v1alpha1
+  kind: SNSTopic
+imports:
+- from: "spec.id"
+  to: "metadata.annotations['crossplane.io/external-name']"
+- from: "spec.arn"
+  to: "metadata.annotations['import.deform.io/arn']"
+- from: "spec.policy"
+  to: "spec.forProvider.policy"
+- from: "spec.tags.Application"
+  to: "spec.forProvider.tags"
+- from: "spec.name"
+  to: "spec.forProvider.name"
+#unidentified:
+#- from: "spec.application_success_feedback_sample_rate"
+#- from: "spec.http_success_feedback_sample_rate"
+#- from: "spec.lambda_success_feedback_sample_rate"
+#- from: "spec.sqs_success_feedback_sample_rate"

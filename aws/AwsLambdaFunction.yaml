@@ -1,0 +1,52 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsLambdaFunction
+target:
+  apiVersion: lambda.aws.crossplane.io/v1alpha1
+  kind: Function
+imports:
+- from: "spec.id"
+  to: "metadata.annotations['crossplane.io/external-name']"
+- from: "spec.arn"
+  to: "metadata.annotations['import.deform.io/arn']"
+- from: "spec.handler"
+  to: "spec.forProvider.handler"
+- from: "spec.package_type"
+  to: "spec.forProvider.packageType"
+- from: "spec.memory_size"
+  to: "spec.forProvider.memorySize"
+- from: "spec.environment[0].variables"
+  to: "spec.forProvider.environment.variables"
+- from: "spec.runtime"
+  to: "spec.forProvider.runtime"
+- from: "spec.role"
+  to: "spec.forProvider.role"
+- from: "spec.timeout"
+  to: "spec.forProvider.timeout"
+- from: "spec.description"
+  to: "spec.forProvider.description"
+- from: "spec.tracing_config[0].mode"
+  to: "spec.forProvider.tracingConfig.mode"
+- from: "spec.s3_bucket"
+  to: "spec.forProvider.code.s3Bucket"
+- from: "spec.s3_key"
+  to: "spec.forProvider.code.s3Key"
+
+#XXX - from: "spec.tags.Application"
+#  to: "spec.forProvider.tags"
+exports:
+- from: "spec.last_modified"
+  at: "status.atProvider.lastModified"
+- from: "spec.version"
+  at: "status.atProvider.version"
+- from: "spec.function_name"
+  at: "status.atProvider.functionName"
+- from: "spec.source_code_hash"
+  at: "status.atProvider.codeSHA256"
+- from: "spec.source_code_size"
+  at: "status.atProvider.codeSize"
+
+#unidentified:
+#- from: "spec.invoke_arn"
+#- from: "spec.qualified_arn"
+#- from: "spec.reserved_concurrent_executions"

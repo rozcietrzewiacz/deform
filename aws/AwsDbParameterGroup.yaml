@@ -1,0 +1,26 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsDbParameterGroup
+target:
+  apiVersion: rds.aws.crossplane.io/v1alpha1
+  kind: DBParameterGroup
+imports:
+- from: "spec.id"
+  to: "metadata.annotations['crossplane.io/external-name']"
+- from: "spec.arn"
+  to: "metadata.annotations['import.deform.io/arn']"
+- from: "spec.description"
+  to: "spec.forProvider.description"
+- from: "spec.family"
+  to: "spec.forProvider.dbParameterGroupFamily"
+
+##---------
+##- from: "spec.tags...."
+##  to: "spec.forProvider.tags.key"
+##  to: "spec.forProvider.tags.value"
+##- from: "spec.tags.Name"
+##  to: "spec.forProvider.tags"
+exports:
+#unidentified:
+#- from: "spec.name"
+#- from: "spec.name_prefix"

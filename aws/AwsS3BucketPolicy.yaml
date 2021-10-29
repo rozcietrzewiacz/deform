@@ -1,0 +1,14 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsS3BucketPolicy
+target:
+  apiVersion: s3.aws.crossplane.io/v1alpha2
+  kind: BucketPolicy
+imports:
+- from: "spec.id"
+  to: "metadata.annotations['crossplane.io/external-name']"
+- from: "spec.bucket"
+  to: "spec.forProvider.bucketName"
+- from: "spec.policy"
+  to: "spec.forProvider.rawPolicy"
+#TODO "spec.forProvider.region" is REQUIRED in crossplane, but not defined anywhere in terraform module!

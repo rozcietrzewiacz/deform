@@ -7,25 +7,18 @@ source:
 target:
   provider:
     package: provider-aws
-    version: v0.18.0
+    version: v0.20.0
   apiVersion: s3.aws.crossplane.io/v1beta1
   kind: Bucket
 imports:
-- from: "spec.bucket"
-  # same as: - from: "spec.id"
+- from: "spec.id"
+  # same as: - from: "spec.bucket"
   to: "spec.annotations['crossplane.io/external-name']"
-- from: "spec.bucket_domain_name"
-  to: "spec.annotations['bucket_domain_name']"
-- from: "spec.bucket_regional_domain_name"
-  to: "spec.annotations['bucket_regional_domain_name']"
 - from: "spec.arn"
-  to: "metadata.annotations['arn']"
-- from: "spec.hosted_zone_id"
-  to: "spec.annotations['hosted_zone_id']"
+  to: "metadata.annotations['import.deform.io/arn']"
 
-- from: "spec.acl"
-  to: "spec.forProvider.acl"
 - from: "spec.force_destroy"
+  ##XXX unsure... This might be overriding a global setting in the future
   to: "spec.deletionPolicy"
   transforms:
   - type: convert
@@ -37,12 +30,13 @@ imports:
     type: map
 - from: "spec.region"
   to: "spec.forProvider.locationConstraint"
+- from: "spec.acl"
+  to: "spec.forProvider.acl"
 - from: "spec.request_payer"
   to: "spec.forProvider.paymentConfiguration.payer"
 - from: "spec.acceleration_status"
   #TODO: Check if (how) an empty value here works!
   to: "spec.forProvider.accelerateConfiguration.status"
-
 - from: "spec.versioning[0].enabled"
   to: "spec.forProvider.versioningConfiguration.status"
   transforms:
@@ -64,9 +58,47 @@ imports:
       "false": "Disabled"
     type: map
 
+
+- from: "spec.bucket_domain_name"
+  to: "spec.annotations['bucket_domain_name']"
+- from: "spec.bucket_regional_domain_name"
+  to: "spec.annotations['bucket_regional_domain_name']"
+- from: "spec.hosted_zone_id"
+  to: "spec.annotations['hosted_zone_id']"
+
+- from: "spec.lifecycle_rule[0].id"
+  to: "spec.forProvider.lifecycleConfiguration.rules[0].id"
+- from: "spec.lifecycle_rule[0].abort_incomplete_multipart_upload_days"
+  to: "spec.forProvider.lifecycleConfiguration.rules[0].abortIncompleteMultipartUpload.daysAfterInitiation"
+- from: "spec.lifecycle_rule[0].enabled"
+  to: "spec.forProvider.lifecycleConfiguration.rules[0].status"
+  transforms:
+  - type: convert
+    convert:
+      toType: string
+  - map:
+      "true": "Enabled"
+      "false": "Disabled"
+    type: map
+- from: "spec.lifecycle_rule[0].expiration[0].date"
+  to: "spec.forProvider.lifecycleConfiguration.rules[0].expiration.date"
+- from: "spec.lifecycle_rule[0].expiration[0].days"
+  to: "spec.forProvider.lifecycleConfiguration.rules[0].expiration.days"
+- from: "spec.lifecycle_rule[0].expiration[0].expired_object_delete_marker"
+  to: "spec.forProvider.lifecycleConfiguration.rules[0].expiration.expiredObjectDeleteMarker"
+
+- from: "spec.cors_rule[0].allowed_headers"
+  to: "spec.forProvider.corsConfiguration.corsRules[0].allowedHeaders"
+- from: "spec.cors_rule[0].allowed_methods"
+  to: "spec.forProvider.corsConfiguration.corsRules[0].allowedMethods"
+- from: "spec.cors_rule[0].allowed_origins"
+  to: "spec.forProvider.corsConfiguration.corsRules[0].allowedOrigins"
+- from: "spec.cors_rule[0].expose_headers"
+  to: "spec.forProvider.corsConfiguration.corsRules[0].exposeHeaders"
+- from: "spec.cors_rule[0].max_age_seconds"
+  to: "spec.forProvider.corsConfiguration.corsRules[0].maxAgeSeconds"
+
 ###################################################################
 #TODO: server_side_encryption_configuration 
 # (to: "spec.forProvider.serverSideEncryptionConfiguration")
 # - This has "rules", where - objects need to be expanded
-#??? - from: "spec.versioning.enabled" ??=> versioningConfiguration.status
-#

@@ -6,14 +6,15 @@ target:
   kind: IAMRole
 imports:
 - from: "spec.id"
-  #TODO: "spec.name" is  the same
   to: "spec.annotations['crossplane.io/external-name']"
-- from: "spec.unique_id"
-  to: "metadata.annotations['unique_id']"
 - from: "spec.arn"
-  to: "metadata.annotations['arn']"
+  to: "metadata.annotations['import.deform.io/arn']"
+
 - from: "spec.create_date"
-  to: "metadata.annotations['create_date']"
+  to: "metadata.annotations['import.deform.io/create_date']"
+- from: "spec.unique_id"
+  to: "metadata.annotations['import.deform.io/unique_id']"
+
 - from: "spec.assume_role_policy"
   to: "spec.forProvider.assumeRolePolicyDocument"
 - from: "spec.description"
@@ -22,11 +23,15 @@ imports:
   to: "spec.forProvider.maxSessionDuration"
 - from: "spec.path"
   to: "spec.forProvider.path"
+exports:
+- from: "spec.arn"
+  at: "status.atProvider.arn"
+#XXX CHECK- from: "spec.unique_id"
+#  at: "spec.atProvider.roleID"
 
 #XXX DOESN'T WORK, because the 'from' is object (k-v map), while 'to' is an array [{key,value}]
 #- from: "spec.tags"
 #  to: "spec.forProvider.tags"
-
 
 ######## 
 # TODO: -from: "spec.managed_policy_arns.0"

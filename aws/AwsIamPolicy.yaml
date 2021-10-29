@@ -8,16 +8,15 @@ imports:
 - from: "spec.id"
   to: "spec.annotations['crossplane.io/external-name']"
 - from: "spec.arn"
-  to: "metadata.annotations['arn']"
-- from: "spec.policy_id"
-  to: "spec.annotations['policy_id']"
+  to: "metadata.annotations['import.deform.io/arn']"
 - from: "spec.name"
-  #TODO: Should be the same as "id". Maybe use both (meld)?
   to: "spec.forProvider.name"
-
 - from: "spec.description"
   to: "spec.forProvider.description"
 - from: "spec.path"
   to: "spec.forProvider.path"
 - from: "spec.policy"
   to: "spec.forProvider.document"
+exports:
+- from: "spec.policy_id"
+  at: "status.atProvider.policyId"
