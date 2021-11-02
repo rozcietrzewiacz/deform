@@ -35,63 +35,6 @@ _yaml_helpful_footer()
 YAML
 }
 
-_find_target_crd_for_given_raw_crd()
-{
-  local crd_extracted_params_file=${1}
-  local raw_crd_kind=${2}
-  shift 2
-  #All subsequent parameters are passed to fzf header
-  _split_camel_words()
-  {
-    echo $@ \
-    | sed -E -e 's/[A-Z][A-Z]+/ \0/g' -e 's/[A-Z][a-z0-9]/ \0/g' \
-    | tr '[A-Z]' '[a-z]' | cut -d ' ' -f 3-
-    # Deform's "raw crd" kind name is based on terraform module name, where
-    # the first word is the provider name. Due to how the first sed expression
-    # above is structured, there is also an extra space at the beginning.
-    # All this considered, we start from the third segment.
-  }
-  local kind_words="$(_split_camel_words ${raw_crd_kind})"
-
-  # Concept: the arrays include entries in the form:
-  # "<id>:<greppable>", where:
-  #    <id> - the "<group>.<kind>" string, as .id in crd_extracted_params_file
-  #    <greppable> - either "<group><kind>" or "<kind>" alone
-  #
-  # Thus egrep only focuses on the second part, starting with ":"
-  local eregex_kind_words=":\<${kind_words// /.?}\>"
-
-  local xp_groupKinds=( $(< ${crd_extracted_params_file} \
-    jq -r '"\(.id):\(.group + .kind)"' ))
-  local xp_kinds=( $(< ${crd_extracted_params_file} \
-    jq -r '"\(.id):\(.kind)"' ))
-
-  ### Strategy:
-  # - try to match <group><kind> first
-  # - if no single match found, try <kind> alone
-  # - if still no match was found, use fzf with <group>.<kind> (i.e. "id")
-  {
-    printf "%s\n" ${xp_groupKinds[@]} \
-      | grep -i -E "${eregex_kind_words}" \
-    || printf "%s\n" ${xp_kinds[@]} \
-      | grep -i -E "${eregex_kind_words}" \
-    || printf "%s\n" ${xp_groupKinds[@]%%:*} \
-      | fzf -i -q "${kind_words}" \
-          --no-info \
-          --reverse \
-          --preview-window=right,65% \
-          --preview="echo Selected Crossplane provider CRD parameters:;
-              < ${crd_extracted_params_file} jq -C '
-                select(.id == \"'{}'\")
-                | del(.id)
-                | del(.group)
-               '" \
-          --header=$'SELECT MATCH FOR \e[44;1m '${raw_crd_kind}$' \e[0m\n'"$(
-              printf "%s\n" $@ | head -n 30;
-              echo v----------------------v)"
-
-  } | cut -d ':' -f 1
-}
 
 prep_files ()
 {
@@ -106,6 +49,10 @@ prep_files ()
   #TODO: generate the above files in a standardized manner
   local crd_extracted_params=$(realpath ".cache/${provider}/xp-params_v*.json")
   local terraform_specs=$(realpath ".cache/${provider}/tf-params_main.json")
+  local xp_groupKinds=( $(< ${crd_extracted_params} \
+    jq -r '"\(.id):\(.group + .kind)"' ))
+  local xp_kinds=( $(< ${crd_extracted_params} \
+    jq -r '"\(.id):\(.kind)"' ))
 
   __get_cr_element()
   {
@@ -122,6 +69,71 @@ prep_files ()
     echo "$@" > /dev/stderr
   }
 
+  _find_target_crd_for_given_raw_crd()
+  {
+    local raw_crd_kind=${1}
+    shift 1
+    #All subsequent parameters are passed to fzf header
+    _split_camel_words()
+    {
+      echo $@ \
+      | sed -E -e 's/[A-Z][A-Z]+/ \0/g' -e 's/[A-Z][a-z0-9]/ \0/g' \
+      | tr '[A-Z]' '[a-z]' | cut -d ' ' -f 3-
+      # Deform's "raw crd" kind name is based on terraform module name, where
+      # the first word is the provider name. Due to how the first sed expression
+      # above is structured, there is also an extra space at the beginning.
+      # All this considered, we start from the third segment.
+    }
+    local kind_words="$(_split_camel_words ${raw_crd_kind})"
+
+    # Concept: the arrays include entries in the form:
+    # "<id>:<greppable>", where:
+    #    <id> - the "<group>.<kind>" string, as .id in crd_extracted_params_file
+    #    <greppable> - either "<group><kind>" or "<kind>" alone
+    #
+    # Thus egrep only focuses on the second part, starting with ":"
+    local eregex_kind_words=":\<${kind_words// /.?}\>"
+
+    ### Strategy:
+    # - try to match <group><kind> first
+    # - if no single match found, try <kind> alone
+    # - if still no match was found, use fzf with <group>.<kind> (i.e. "id")
+    local matches matchCount
+    __try()
+    {
+      matches=$( printf "%s\n" ${@} | grep -i -E "${eregex_kind_words}" )
+      matchCount=$( <<< "${matches}" wc -w)
+    }
+
+    __try ${xp_groupKinds[@]}
+    [ $matchCount -eq 1 ] || \
+    __try ${xp_kinds[@]}
+
+    [ "${SKIP_FZF}" ] || \
+    [ $matchCount -eq 1 ] || \
+    matches=$(
+      printf "%s\n" ${xp_groupKinds[@]%%:*} \
+        | fzf -i -q "${kind_words}" \
+          --no-info \
+          --reverse \
+          --preview-window=right,65% \
+          --preview="echo Selected Crossplane provider CRD parameters:;
+              < ${crd_extracted_params} jq -C '
+                select(.id == \"'{}'\")
+                | del(.id)
+                | del(.group)
+               '" \
+          --header=$'SELECT MATCH FOR \e[44;1m '${raw_crd_kind}$' \e[0m\n'"$(
+              printf "%s\n" $@ | head -n 30;
+              echo v----------------------v)"
+    )
+
+    matchCount=$( <<< "${matches}" wc -w)
+    [ $matchCount -eq 1 ] && \
+    echo "${matches}" | cut -d ':' -f 1
+  }
+
+  ############################################################################
   #FD3: MAIN LOOP INPUT
   exec 3< <(
     < ${tfstate_show} jq -f jq/from-tfstate-output_parse-modules.jq \
@@ -159,7 +171,7 @@ prep_files ()
     __e " > finding crossplane CRD match..."
 
     # TODO This is ugly. Bouncing back and forth via "$group.$raw_kind" :/
-    local crd_match=$(_find_target_crd_for_given_raw_crd ${crd_extracted_params} ${raw_kind} ${paths[@]})
+    local crd_match=$(_find_target_crd_for_given_raw_crd ${raw_kind} ${paths[@]})
     if [ ! ${crd_match} ]
     then
       __e -e " > \e[31;1mNo match found! Marking as missing.\e[0m"
