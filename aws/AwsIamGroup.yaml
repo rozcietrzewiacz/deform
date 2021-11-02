@@ -6,12 +6,13 @@ target:
   kind: IAMGroup
 imports:
 - from: "spec.id"
-  #Should be the same as "id". TODO: Maybe use both (meld)?
-  #from: "spec.name"
   to: "spec.annotations['crossplane.io/external-name']"
-- from: "spec.unique_id"
-  to: "metadata.annotations['unique_id']"
-- from: "spec.arn"
-  to: "metadata.annotations['arn']"
+- from: "spec.name"
+  to: "metadata.annotations['import.deform.io/name']"
 - from: "spec.path"
   to: "spec.forProvider.path"
+exports:
+- from: "spec.arn"
+  at: "status.atProvider.arn"
+- from: "spec.unique_id"
+  to: "status.atProvider.groupId"

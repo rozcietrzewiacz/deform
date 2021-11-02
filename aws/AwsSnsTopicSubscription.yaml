@@ -1,0 +1,25 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsSnsTopicSubscription
+target:
+  apiVersion: notification.aws.crossplane.io/v1alpha1
+  kind: SNSSubscription
+imports:
+- from: "spec.id"
+  to: "metadata.annotations['crossplane.io/external-name']"
+- from: "spec.arn"
+  to: "metadata.annotations['import.deform.io/arn']"
+- from: "spec.endpoint"
+  to: "spec.forProvider.endpoint"
+- from: "spec.protocol"
+  to: "spec.forProvider.protocol"
+- from: "spec.topic_arn"
+  to: "spec.forProvider.topicArn"
+exports:
+- from: "spec.confirmation_was_authenticated"
+  at: "status.atProvider.confirmationWasAuthenticated"
+- from: "spec.owner_id"
+  at: "status.atProvider.owner"
+
+#unidentified:
+#- from: "spec.confirmation_timeout_in_minutes"

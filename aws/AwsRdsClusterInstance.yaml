@@ -1,0 +1,56 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsRdsClusterInstance
+target:
+  apiVersion: rds.aws.crossplane.io/v1alpha1
+  kind: DBInstance
+imports:
+- from: "spec.id"
+  to: "metadata.annotations['crossplane.io/external-name']"
+- from: "spec.arn"
+  to: "metadata.annotations['import.deform.io/arn']"
+- from: "spec.db_subnet_group_name"
+  to: "spec.forProvider.dbSubnetGroupName"
+- from: "spec.port"
+  to: "spec.forProvider.port"
+- from: "spec.auto_minor_version_upgrade"
+  to: "spec.forProvider.autoMinorVersionUpgrade"
+- from: "spec.kms_key_id"
+  to: "spec.forProvider.kmsKeyID"
+- from: "spec.availability_zone"
+  to: "spec.forProvider.availabilityZone"
+- from: "spec.storage_encrypted"
+  to: "spec.forProvider.storageEncrypted"
+- from: "spec.preferred_maintenance_window"
+  to: "spec.forProvider.preferredMaintenanceWindow"
+- from: "spec.engine_version"
+  to: "spec.forProvider.engineVersion"
+- from: "spec.db_parameter_group_name"
+  to: "spec.forProvider.dbParameterGroupName"
+- from: "spec.promotion_tier"
+  to: "spec.forProvider.promotionTier"
+- from: "spec.engine"
+  to: "spec.forProvider.engine"
+- from: "spec.tags.Tenant"
+  to: "spec.forProvider.tags"
+- from: "spec.monitoring_interval"
+  to: "spec.forProvider.monitoringInterval"
+- from: "spec.preferred_backup_window"
+  to: "spec.forProvider.preferredBackupWindow"
+- from: "spec.ca_cert_identifier"
+  to: "spec.forProvider.caCertificateIdentifier"
+- from: "spec.cluster_identifier"
+  to: "spec.forProvider.dbClusterIdentifier"
+- from: "spec.instance_class"
+  to: "spec.forProvider.dbInstanceClass"
+
+exports:
+- from: "spec.endpoint"
+  at: "status.atProvider.endpoint"
+- from: "spec.dbi_resource_id"
+  at: "status.atProvider.dbiResourceID"
+- from: "spec.identifier"
+  at: "status.atProvider.dbInstanceIdentifier"
+
+#unidentified:
+#- from: "spec.writer"

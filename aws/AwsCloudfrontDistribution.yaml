@@ -2,7 +2,9 @@ source:
   apiVersion: "raw.import.deform.io/v1alpha1"
   kind: AwsCloudfrontDistribution
 target:
-  ##!!! at v0.20.0
+  provider:
+    package: provider-aws
+    version: v0.20.0
   apiVersion: cloudfront.aws.crossplane.io/v1alpha1
   kind: Distribution
 imports:

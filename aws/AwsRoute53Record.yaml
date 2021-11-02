@@ -6,10 +6,12 @@ target:
   kind: ResourceRecordSet
 imports:
 # /required/
+- from: "spec.id"
+  to: "metadata.annotations['crossplane.io/external-name']"
 - from: "spec.type"
   to: "spec.forProvider.type"
 - from: "spec.name"
-  to: "metadata.annotations['external-name']"
+  to: "metadata.annotations['import.deform.io/name']"
 # /crucial/
 - from: "spec.zone_id"
   to: "spec.forProvider.zoneId"
@@ -42,6 +44,4 @@ imports:
   to: "spec.forProvider.healthCheckId"
 # /leftover/
 - from: "spec.fqdn"
-  to: "metadata.annotations['fqdn']"
-- from: "spec.id"
-  to: "metadata.annotations[id]"
+  to: "metadata.annotations['import.deform.io/fqdn']"

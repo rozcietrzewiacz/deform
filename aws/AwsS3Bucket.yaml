@@ -60,11 +60,11 @@ imports:
 
 
 - from: "spec.bucket_domain_name"
-  to: "spec.annotations['bucket_domain_name']"
+  to: "spec.annotations['import.deform.io/bucket_domain_name']"
 - from: "spec.bucket_regional_domain_name"
-  to: "spec.annotations['bucket_regional_domain_name']"
+  to: "spec.annotations['import.deform.io/bucket_regional_domain_name']"
 - from: "spec.hosted_zone_id"
-  to: "spec.annotations['hosted_zone_id']"
+  to: "spec.annotations['import.deform.io/hosted_zone_id']"
 
 - from: "spec.lifecycle_rule[0].id"
   to: "spec.forProvider.lifecycleConfiguration.rules[0].id"
@@ -97,6 +97,10 @@ imports:
   to: "spec.forProvider.corsConfiguration.corsRules[0].exposeHeaders"
 - from: "spec.cors_rule[0].max_age_seconds"
   to: "spec.forProvider.corsConfiguration.corsRules[0].maxAgeSeconds"
+
+exports:
+- from: "spec.arn"
+  at: "status.atProvider.arn"
 
 ###################################################################
 #TODO: server_side_encryption_configuration 

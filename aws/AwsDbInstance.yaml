@@ -28,7 +28,7 @@ imports:
   to: "spec.forProvider.allocatedStorage"
 - from: "spec.engine_version"
   to: "spec.forProvider.engineVersion"
-- from: "spec.vpc_security_group_ids.0"
+- from: "spec.vpc_security_group_ids"
   to: "spec.forProvider.vpcSecurityGroupIDs"
 - from: "spec.copy_tags_to_snapshot"
   to: "spec.forProvider.copyTagsToSnapshot"
@@ -72,7 +72,7 @@ exports:
 - from: "spec.hosted_zone_id"
   at: "status.atProvider.endpoint.hostedZoneID"
 - from: "spec.resource_id"
-  at: "status.atProvider.dbiResourceID" ###XXX "db*i*"???? that's what the docs say...
+  at: "status.atProvider.dbiResourceID"
 - from: "spec.status"
   at: "status,atProvider.dbInstanceStatus"
 
