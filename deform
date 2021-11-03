@@ -30,7 +30,7 @@ prepare()
 
   if [ "${2}" ]
   then
-    PROVIDER_JSON=${2}
+    PROVIDER=${2}
   else
     ###echo "WARNING: No provider given explicitly. Auto-selecting based on top occurences:" >/dev/stderr
     PROVIDER=$(
