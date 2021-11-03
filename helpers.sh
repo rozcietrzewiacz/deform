@@ -278,7 +278,10 @@ cover ()
   fi
   shift
   ###XXX Consider: https://stackoverflow.com/questions/26717277/accessing-a-json-object-in-bash-associative-array-list-another-model/51690860#51690860
-  ./deform <( cat $@ ) xr ${provider} | jq '.kind' -r | sort | uniq -c | sort -g \
+  cat $@ \
+    | jq --arg provider ${provider} -f jq/from-tfstate-output_parse-modules.jq \
+    | jq -s -f jq/from-type+value-to-raw-xr.jq -c \
+    | jq '.kind' -r | sort | uniq -c | sort -g \
     | while read count kind; do
       echo -e "${kind}($count)\t$(ls ${provider}/${kind}.yaml 2>/dev/null || if [ -f ${provider}/_edit_${kind}.yaml ]; then echo -n "(WIP)"; else echo -n "(MISSING)"; fi )"
     done \
