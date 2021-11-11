@@ -56,7 +56,8 @@ imports:
   to: "spec.forProvider.dbInstanceClass"
 - from: "spec.maintenance_window"
   to: "spec.forProvider.preferredMaintenanceWindow"
-
+- from: metadata.annotations['extracted.import.deform.io/awsRegion']
+  to: spec.forProvider.region
 
 #XXX - from: "spec.tags.Maintainer"
 #  to: "spec.forProvider.tags"

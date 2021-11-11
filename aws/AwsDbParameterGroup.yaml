@@ -13,6 +13,8 @@ imports:
   to: "spec.forProvider.description"
 - from: "spec.family"
   to: "spec.forProvider.dbParameterGroupFamily"
+- from: metadata.annotations['extracted.import.deform.io/awsRegion']
+  to: spec.forProvider.region
 
 ##---------
 ##- from: "spec.tags...."
