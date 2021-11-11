@@ -23,6 +23,19 @@ def cleanup:
   )
 ;
 
+def provider_extractor:
+# TODO: provider_extractor should be sourced (include ...) from provider config
+
+{
+  "metadata": {
+    "annotations": {
+      "extracted.import.deform.io/awsRegion": ( (.values.arn // "" ) | split(":")[3] ),
+      "extracted.import.deform.io/awsAccount": ( (.values.arn // "" ) | split(":")[4] )
+    }
+  }
+}
+;
+
 def to_xr:
   .
   | ( .type | to_kind ) as $kind
@@ -41,6 +54,7 @@ def to_xr:
     },
     "spec": .values
   }
+  * ( . | provider_extractor )
 ;
 
 ####### MAIN ######
