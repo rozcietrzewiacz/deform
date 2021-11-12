@@ -9,32 +9,19 @@ spec:
     apiVersion: {{ .Values.source.apiVersion}}
     kind: {{ .Values.source.kind }}
   resources:
+  ## global:
+  {{- $providerConfig := .Values.providerConfig }}
   - base:
       apiVersion: {{ .Values.target.apiVersion }}
       kind: {{ .Values.target.kind }}
       metadata: {}
-      spec: {}
+      spec:
+        providerConfigRef:
+          name: {{ $providerConfig }}
+        {{- with .Values.deletionPolicy }}
+        deletionPolicy: {{ . }}
+        {{- end }}
     patches:
-    ## global:
-    {{- $providerConfig := .Values.providerConfig }}
-{{- /*
- Below is a hack to inject static ProviderConfig reference into all composed resources
-TODO: use something like FromConstantValue once it's available
-*/}}
-    - fromFieldPath: "kind"
-      toFieldPath: "spec.providerConfigRef.name"
-      transforms:
-      - type: map
-        map:
-          {{ .Values.source.kind }}: "{{ $providerConfig }}"
-    {{- with .Values.deletionPolicy }}
-    - fromFieldPath: "kind"
-      toFieldPath: "spec.deletionPolicy"
-      transforms:
-      - type: map
-        map:
-          {{ $.Values.source.kind }}: "{{ . }}"
-    {{- end }}
     - fromFieldPath: "metadata.name"
     - fromFieldPath: "metadata.labels"
     - fromFieldPath: "spec.id"
