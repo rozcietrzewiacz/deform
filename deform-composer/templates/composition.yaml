@@ -38,7 +38,7 @@ TODO: use something like FromConstantValue once it's available
     - fromFieldPath: "metadata.name"
     - fromFieldPath: "metadata.labels"
     - fromFieldPath: "spec.id"
-      toFieldPath: "spec.annotations['crossplane.io/external-name']"
+      toFieldPath: "metadata.annotations['crossplane.io/external-name']"
     ## imports from config:
     {{- range .Values.imports }}
     - fromFieldPath: {{ .from }}

@@ -14,7 +14,7 @@ target:
   kind: IAMGroupPolicyAttachment
 imports:
 - from: "metadata.name" # XXX ??? check
-  to: "spec.annotations['crossplane.io/external-name']"
+  to: "metadata.annotations['crossplane.io/external-name']"
 - from: "spec.policy_arn"
   to: "spec.forProvider.policyArn"
 #TODO: Determine (HOW?) whether we can use spec.forProvider.policyArnRef instead,

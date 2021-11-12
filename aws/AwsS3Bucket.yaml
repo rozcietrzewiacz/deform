@@ -13,7 +13,7 @@ target:
 imports:
 - from: "spec.id"
   # same as: - from: "spec.bucket"
-  to: "spec.annotations['crossplane.io/external-name']"
+  to: "metadata.annotations['crossplane.io/external-name']"
 - from: "spec.arn"
   to: "metadata.annotations['import.deform.io/arn']"
 
@@ -60,11 +60,11 @@ imports:
 
 
 - from: "spec.bucket_domain_name"
-  to: "spec.annotations['import.deform.io/bucket_domain_name']"
+  to: "metadata.annotations['import.deform.io/bucket_domain_name']"
 - from: "spec.bucket_regional_domain_name"
-  to: "spec.annotations['import.deform.io/bucket_regional_domain_name']"
+  to: "metadata.annotations['import.deform.io/bucket_regional_domain_name']"
 - from: "spec.hosted_zone_id"
-  to: "spec.annotations['import.deform.io/hosted_zone_id']"
+  to: "metadata.annotations['import.deform.io/hosted_zone_id']"
 
 - from: "spec.lifecycle_rule[0].id"
   to: "spec.forProvider.lifecycleConfiguration.rules[0].id"

@@ -6,7 +6,7 @@ target:
   kind: Cluster
 imports:
 - from: "spec.id"
-  to: "spec.annotations['crossplane.io/external-name']"
+  to: "metadata.annotations['crossplane.io/external-name']"
 - from: "spec.arn"
   to: "metadata.annotations['import.deform.io/arn']"
 - from: "spec.version"

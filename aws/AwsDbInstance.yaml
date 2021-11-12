@@ -15,9 +15,7 @@ imports:
   to: "spec.forProvider.autoMinorVersionUpgrade"
 - from: "spec.kms_key_id"
   to: "spec.forProvider.kmsKeyID"
-- from: "spec.id"
 #- from: "spec.name"
-  to: "metadata.annotations['crossplane.io/external-name']"
 - from: "spec.arn"
   to: "metadata.annotations['import.deform.io/arn']"
 - from: "spec.availability_zone"
@@ -75,7 +73,7 @@ exports:
 - from: "spec.resource_id"
   at: "status.atProvider.dbiResourceID"
 - from: "spec.status"
-  at: "status,atProvider.dbInstanceStatus"
+  at: "status.atProvider.dbInstanceStatus"
 
 #unidentified:
 #- from: "spec.delete_automated_backups"
