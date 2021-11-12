@@ -11,8 +11,6 @@ target:
   apiVersion: identity.aws.crossplane.io/v1beta1
   kind: IAMRolePolicyAttachment
 imports:
-- from: "spec.id"
-  to: "metadata.annotations['crossplane.io/external-name']"
 - from: "spec.policy_arn"
   to: "spec.forProvider.policyArn"
 - from: "spec.role"

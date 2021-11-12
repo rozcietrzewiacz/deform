@@ -5,8 +5,6 @@ target:
   apiVersion: identity.aws.crossplane.io/v1alpha1
   kind: IAMGroup
 imports:
-- from: "spec.id"
-  to: "metadata.annotations['crossplane.io/external-name']"
 - from: "spec.name"
   to: "metadata.annotations['import.deform.io/name']"
 - from: "spec.path"

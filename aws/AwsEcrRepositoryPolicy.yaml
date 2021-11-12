@@ -5,8 +5,6 @@ target:
   apiVersion: ecr.aws.crossplane.io/v1alpha1
   kind: RepositoryPolicy
 imports:
-- from: "spec.id"
-  to: "metadata.annotations['crossplane.io/external-name']"
 
 - from: "spec.policy"
   to: "spec.forProvider.rawPolicy"

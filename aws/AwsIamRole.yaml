@@ -5,8 +5,6 @@ target:
   apiVersion: identity.aws.crossplane.io/v1beta1
   kind: IAMRole
 imports:
-- from: "spec.id"
-  to: "spec.annotations['crossplane.io/external-name']"
 - from: "spec.arn"
   to: "metadata.annotations['import.deform.io/arn']"
 

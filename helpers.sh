@@ -197,7 +197,9 @@ prep_files ()
       # hardcoded in the `deform-composer`
       if [ "${path}" == "spec.id" ]
       then
-        imports["${path}"]="metadata.annotations['crossplane.io/external-name']"
+        #NOPE: This is now added in the composition helm template.
+        #imports["${path}"]="metadata.annotations['crossplane.io/external-name']"
+        # Just skip.
         continue
       elif [ "${path}" == "spec.arn" ]
       then

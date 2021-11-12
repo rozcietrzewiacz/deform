@@ -5,8 +5,6 @@ target:
   apiVersion: ec2.aws.crossplane.io/v1beta1
   kind: SecurityGroup
 imports:
-- from: "spec.id"
-  to: "metadata.annotations['crossplane.io/external-name']"
 - from: "spec.arn"
   to: "metadata.annotations['import.deform.io/arn']"
 - from: "spec.vpc_id"

@@ -8,8 +8,6 @@ target:
   apiVersion: cloudfront.aws.crossplane.io/v1alpha1
   kind: Distribution
 imports:
-- from: "spec.id"
-  to: "metadata.annotations['crossplane.io/external-name']"
 - from: "spec.arn"
   to: "metadata.annotations['import.deform.io/arn']"
 - from: "spec.aliases"

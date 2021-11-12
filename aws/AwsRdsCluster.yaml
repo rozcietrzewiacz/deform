@@ -11,8 +11,6 @@ imports:
   to: "spec.forProvider.port"
 - from: "spec.kms_key_id"
   to: "spec.forProvider.kmsKeyID"
-- from: "spec.id"
-  to: "metadata.annotations['crossplane.io/external-name']"
 - from: "spec.arn"
   to: "metadata.annotations['import.deform.io/arn']"
 - from: "spec.engine_mode"
