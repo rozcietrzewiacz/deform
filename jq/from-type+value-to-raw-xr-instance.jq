@@ -24,15 +24,29 @@ def cleanup:
 ;
 
 def provider_extractor:
+## empty placeholder
+{}
+;
+
+def provider_extractor:
 # TODO: provider_extractor should be sourced (include ...) from provider config
 
 {
   "metadata": {
     "annotations": {
-      "extracted.import.deform.io/awsRegion": ( (.values.arn // "" ) | split(":")[3] ),
-      "extracted.import.deform.io/awsAccount": ( (.values.arn // "" ) | split(":")[4] )
+      "extracted.import.deform.io/awsRegion": ( (.values.arn // "::::" ) | split(":")[3] ),
+      "extracted.import.deform.io/awsAccount": ( (.values.arn // "::::" ) | split(":")[4] )
     }
-  }
+  },
+##### TODO: the below snippet has one issue: it diverges from schema defined in xrd!
+#  "spec": (
+#    if .values.tags?
+#    then
+#      { "tags": .values.tags | to_entries }
+#    else
+#      {}
+#    end
+#  )
 }
 ;
 
