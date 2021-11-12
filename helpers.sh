@@ -497,3 +497,17 @@ apply_compositions()
 
   [ "$MSG_BOTTOM" ] && echo -e "\e[35;1m$MSG_BOTTOM\e[0m"
 }
+
+
+k-children ()
+{
+  local parent=$1
+  for kid in $(kubectl get $parent -o json | jq -cr '.spec.resourceRefs[0]')
+  do
+    local kid0=$( <<< "$kid" \
+      jq -r '"\(.kind|ascii_downcase).\(.apiVersion|split("/")[0])/\(.name)"'
+    )
+    echo "-------- ${kid0} -------"
+    kubectl get ${kid0}
+  done
+}
