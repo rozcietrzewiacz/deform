@@ -96,6 +96,11 @@ def to_xrd:
           "name": "v1alpha1",
           "served": true,
           "referenceable": true,
+          "additionalPrinterColumns": [{
+            "jsonPath": ".metadata.annotations.crossplane\\.io/external-name",
+            "name": "ID",
+            "type": "string"
+          }],
           "schema": {
             "openAPIV3Schema": {
               "type": "object",
