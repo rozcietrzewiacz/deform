@@ -26,6 +26,9 @@ spec:
     - fromFieldPath: "metadata.labels"
     - fromFieldPath: "spec.id"
       toFieldPath: "metadata.annotations['crossplane.io/external-name']"
+    ### XXX propagate all annotations from child back to the parent(!)
+    - fromFieldPath: "metadata.annotations"
+      type: ToCompositeFieldPath
     ## imports from config:
     {{- range .Values.imports }}
     - fromFieldPath: {{ .from }}
