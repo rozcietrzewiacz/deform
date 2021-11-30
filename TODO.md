@@ -18,6 +18,7 @@
   * "PublicDNSNamespace"
 
 ## functionality
+- propagate the ENTIRE status of child resource to the parent, along with printer columns' definition
 - Problem: Some tf resource modules don't include region information explicitly,
   while it's required by crossplane counterparts
   Solution 1:

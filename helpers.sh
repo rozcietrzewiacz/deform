@@ -222,6 +222,7 @@ prep_files ()
         imports["${path}"]="spec.forProvider.${arg_matches}"
       elif [ ${#attr_matches[@]} -eq 1 ] # path in attrs
       then
+        ##XXX NO! Wrong way! Probably should just be skipped anyway..
         exports["${path}"]="status.atProvider.${attr_matches}"
       elif [ ${#arg_matches[@]} -gt 1 ] || [ ${#attr_matches[@]} -gt 1 ]
       then
