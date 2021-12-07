@@ -505,12 +505,13 @@ apply_compositions()
 k-children ()
 {
   local parent=$1
-  for kid in $(kubectl get $parent -o json | jq -cr '.spec.resourceRefs[0]')
+  shift 1
+  for kid in $(kubectl get $parent -o json | jq -cr '.spec.resourceRefs[]')
   do
     local kid0=$( <<< "$kid" \
       jq -r '"\(.kind|ascii_downcase).\(.apiVersion|split("/")[0])/\(.name)"'
     )
-    echo "-------- ${kid0} -------"
-    kubectl get ${kid0}
+    echo "-------- ${kid0} -------" >/dev/stderr
+    kubectl get ${kid0} $@
   done
 }
