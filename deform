@@ -102,9 +102,8 @@ extract()
     #Could be anything, but using value as key spares us looking at ${!USED[@]} later
     USED["$kind"]="$kind"
     [ -r "${OUT_DIR}/${jsonName}" ] && {
-      echo "ERROR: ${OUT_DIR}/${jsonName} already exists! exiting."
-      exec 3>&-
-      exit 2
+      echo "WARNING: ${OUT_DIR}/${jsonName} already exists! Skipping."
+      continue
     }
     <<< "${json}" jq > "${OUT_DIR}/${jsonName}" || {
       echo -e "\n ERROR in json:\n${json}" > /dev/stderr
@@ -157,6 +156,11 @@ decompose()
 
     [ "${USED[${sourceName}]}" ] || {
       echo "> $sourceName unused. Skipping."
+      continue
+    }
+
+    [ -f ${OUT_DIR}/compositions/${sourceName}.yaml ] && {
+      echo "WARNING: ${OUT_DIR}/compositions/${sourceName}.yaml already exists! Skipping."
       continue
     }
 
