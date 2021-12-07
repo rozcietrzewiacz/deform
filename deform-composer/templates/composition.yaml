@@ -21,12 +21,15 @@ spec:
         {{- with .Values.deletionPolicy }}
         deletionPolicy: {{ . }}
         {{- end }}
+        {{- with .Values.fixedPart }}
+        {{- . | toYaml | nindent 8 }}
+        {{- end }}
     patches:
     - fromFieldPath: "metadata.name"
     - fromFieldPath: "metadata.labels"
     - fromFieldPath: "spec.id"
       toFieldPath: "metadata.annotations['crossplane.io/external-name']"
-    ### XXX propagate all annotations from child back to the parent(!)
+    ## propagate all annotations from child back to the parent
     - fromFieldPath: "metadata.annotations"
       type: ToCompositeFieldPath
     ## imports from config:
@@ -35,16 +38,32 @@ spec:
       toFieldPath: {{ .to }}
       {{- with .transforms }}
       transforms:
-      {{- . | toYaml | nindent 6 }}
+        {{- . | toYaml | nindent 6 }}
       {{- end }}
     {{- end }}
     ## exports from config:
     {{- range .Values.exports }}
     - type: ToCompositeFieldPath ### UP
-      fromFieldPath: {{ .from }}
-      toFieldPath: {{ .at }}
+      fromFieldPath: {{ .at }}
+      toFieldPath: {{ .from }}
       {{- with .transforms }}
       transforms:
       {{- . | toYaml | nindent 6 }}
       {{- end }}
     {{- end }}
+  {{- range .Values.extraRawResources }}
+  - base:
+      apiVersion: kubernetes.crossplane.io/v1alpha1
+      kind: Object
+      spec:
+        providerConfigRef:
+          name: {{ .k8sProviderConfigName }}
+        forProvider:
+          manifest:
+            {{- .manifest | toYaml | nindent 12 }}
+    patches:
+    {{- range .patches }}
+    - fromFieldPath: {{ .from }}
+      toFieldPath: {{ .to }}
+    {{- end }}
+  {{- end }}
