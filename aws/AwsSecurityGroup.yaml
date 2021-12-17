@@ -13,7 +13,7 @@ imports:
   to: "spec.forProvider.description"
 - from: "spec.name"
   to: "spec.forProvider.groupName"
-  
+
 - ## XXX Caution: A little bit of guesswork at play here!
   from: "spec.egress[0].cidr_blocks[0]"
   to: "spec.forProvider.egress[0].ipRanges[0].cidrIp"

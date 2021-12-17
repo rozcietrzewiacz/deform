@@ -26,7 +26,7 @@ imports:
 #- from: "spec.encryption_configuration.0.kms_key"
 #
 ####
-#TODO: Setup upword path, e.g.: 
+#TODO: Setup upword path, e.g.:
 #exports:
 #- from: "spec.arn"
 #  at: "status.atProvider.repositoryArn"

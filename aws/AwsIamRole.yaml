@@ -44,13 +44,13 @@ exports:
 #    spec:
 #      forProvider:
 #        name: {{ .name }} # required
-#        document: {{ .policy }} # required  
+#        document: {{ .policy }} # required
 #  - kind: IAMRolePolicyAttachment
 #    apiVersion: identity.aws.crossplane.io/v1beta1
-#    metadata: 
+#    metadata:
 #      name: {{ .name }}
 #    spec:
 #      forProvider:
-#        policyArn: ## XXX obtain from above sibling 
+#        policyArn: ## XXX obtain from above sibling
 #        # - or (better?) use policyArnSelector and set unique labels (on both)
 #        roleName: $metadata.name #XXX ref to parent

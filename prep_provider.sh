@@ -35,7 +35,7 @@ _yaml2json()
 
 populate_cache ()
 {
-  [ ${1} ] || 
+  [ ${1} ] ||
   {
     echo "usage: $FUNCNAME <provider>" >/dev/stderr
     return
@@ -97,7 +97,7 @@ populate_cache ()
     | _yaml2json \
     | jq -c '.items' \
     > ${xp_crds}/crds_${xp_tag}.json
-    
+
 
     [ -r xp-params_${xp_tag}.json ] \
     || \

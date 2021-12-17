@@ -12,13 +12,14 @@
   * compatible crossplane versions
   * compatible deform (api) versions
   * default paths/urls
-  * operation modes: full/used/minimal param set conversion; 
+  * operation modes: full/used/minimal param set conversion;
 - validate against corner cases like:
   * "servicediscovery"
   * "PublicDNSNamespace"
 
 ## functionality
-- propagate the ENTIRE status of child resource to the parent, along with printer columns' definition
+- propagate the status of child resource to the parent
+  * at the stage of XRD extraction, identify "spec" paths that are actually status and mark (reaname) them as such
 - Problem: Some tf resource modules don't include region information explicitly,
   while it's required by crossplane counterparts
   Solution 1:

@@ -98,11 +98,14 @@ imports:
 - from: "spec.cors_rule[0].max_age_seconds"
   to: "spec.forProvider.corsConfiguration.corsRules[0].maxAgeSeconds"
 
+- from: "spec.tags"
+  to: "spec.forProvider.tags"
+
 exports:
 - from: "spec.arn"
   at: "status.atProvider.arn"
 
 ###################################################################
-#TODO: server_side_encryption_configuration 
+#TODO: server_side_encryption_configuration
 # (to: "spec.forProvider.serverSideEncryptionConfiguration")
 # - This has "rules", where - objects need to be expanded

@@ -22,7 +22,7 @@ def to_plural: # policy -> policies; bucket -> buckets
 def list_types:
   if type == "object" then
     {
-      "type": ( . | type),
+      "type": ( . | type ),
       "properties": (.|with_entries(.value |= list_types)),
       #XXX DBG "PATH": "A",
     }
