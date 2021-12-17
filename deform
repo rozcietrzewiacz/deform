@@ -193,7 +193,7 @@ apply_all()
   do
     #XXX FILTER with ${SUPPORTED_JSON} HERE??
     kubectl apply -f "${OUT_DIR}/${component}/"
-    if [ $? -eq 0 ]
+    if [ $? -gt 0 ]
     then
       local msg="ERROR encountered while applying ${component}"
       MSG_BOTTOM+="\n${msg}"
