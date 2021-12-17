@@ -39,14 +39,14 @@ def provider_extractor:
     }
   },
 ##### TODO: the below snippet has one issue: it diverges from schema defined in xrd!
-#  "spec": (
-#    if .values.tags?
-#    then
-#      { "tags": .values.tags | to_entries }
-#    else
-#      {}
-#    end
-#  )
+  "spec": (
+    if .values.tags?
+    then
+      { "tags": .values.tags | to_entries }
+    else
+      {}
+    end
+  )
 }
 ;
 

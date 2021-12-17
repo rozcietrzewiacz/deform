@@ -26,12 +26,10 @@ exports:
   at: "status.atProvider.arn"
 #XXX CHECK- from: "spec.unique_id"
 #  at: "spec.atProvider.roleID"
+- from: "spec.tags"
+  to: "spec.forProvider.tags"
 
-#XXX DOESN'T WORK, because the 'from' is object (k-v map), while 'to' is an array [{key,value}]
-#- from: "spec.tags"
-#  to: "spec.forProvider.tags"
-
-######## 
+########
 # TODO: -from: "spec.managed_policy_arns.0"
 #
 ###### TODO: createChildren concept

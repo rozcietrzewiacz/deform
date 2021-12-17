@@ -45,8 +45,8 @@ imports:
 - from: "spec.ingress[0].protocol"
   to: "spec.forProvider.ingress[0].ipProtocol"
 
-#XXX - from: "spec.tags.Tenant"
-#  to: "spec.forProvider.tags"
+- from: "spec.tags"
+  to: "spec.forProvider.tags"
 
 exports:
 - from: "spec.owner_id"

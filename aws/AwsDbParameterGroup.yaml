@@ -14,12 +14,9 @@ imports:
 - from: metadata.annotations['extracted.import.deform.io/awsRegion']
   to: spec.forProvider.region
 
-##---------
-##- from: "spec.tags...."
-##  to: "spec.forProvider.tags.key"
-##  to: "spec.forProvider.tags.value"
-##- from: "spec.tags.Name"
-##  to: "spec.forProvider.tags"
+##--------- XXX RELIES on custom conversion function!
+- from: "spec.tags"
+  to: "spec.forProvider.tags"
 exports:
 #unidentified:
 #- from: "spec.name"

@@ -56,9 +56,28 @@ def nlist:
   if type == "object" then
     with_entries(
       select(.value|nonempty)
-      | .value |= (
-           list_types
-      )
+      ## TODO!! We're assuming also ( .[0]|type == "string" ) here:
+      |
+      if (.key=="tags")
+      and ( .value|type == "object" )
+      # XXX wrong (cannot index object...)
+      #and ( .[][0].value|type == "string" )
+      then
+        .value = {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": { "type": "string" },
+              "value": { "type": "string" }
+            }
+          }
+        }
+      else
+        .value |= (
+             list_types
+        )
+      end
     )
   else
    "XXXXXXXXXXXXXXXXXXXXXXXX-BUUUUUG"
