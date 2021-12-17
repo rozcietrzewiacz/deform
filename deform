@@ -13,6 +13,11 @@
 #  KUBECONFIG= kubectl apply --dry-run="client" --validate=false --record=false -o yaml -f -
 #}
 
+_dbg()
+{
+  [ $DEBUG ] && echo "DEBUG: " $@ > /dev/stderr
+}
+
 prepare()
 {
   ## globals ##
@@ -54,16 +59,16 @@ prepare()
   #supportedArray=( "${supportedArray[@]}" )
   SUPPORTED_JSON=$( printf ",\"%s\"" "${supportedArray[@]}" )
   SUPPORTED_JSON=${SUPPORTED_JSON:1}
-  echo -e "Supported objects for $PROVIDER:\n${SUPPORTED_JSON}"
+  _dbg "Supported objects for $PROVIDER:\n${SUPPORTED_JSON}" -e
 
   OUT_DIR="out/${INPUT#*/}"
-  echo "Files will be generated in ${OUT_DIR}/" >/dev/stderr
+  echo ">> Files will be generated in ${OUT_DIR}/" >/dev/stderr
   mkdir -p ${OUT_DIR}/{xr,xrd,composition}s
 }
 
 extract()
 {
-  echo
+  echo " > extracting $1s" > /dev/stderr
   filter()
   {
     if [ "$1" == "xr" ]
@@ -97,14 +102,14 @@ extract()
   while read -r json <&3
   do
     jsonName=${outType}s/$( <<< "${json}" jq -r '.kind+"."+.metadata.name' ).json
-    echo ${jsonName} > /dev/stderr
     local kind=$(<<< "${json}" jq -r '.kind')
     #Could be anything, but using value as key spares us looking at ${!USED[@]} later
     USED["$kind"]="$kind"
     [ -r "${OUT_DIR}/${jsonName}" ] && {
-      echo "WARNING: ${OUT_DIR}/${jsonName} already exists! Skipping."
+      _dbg "${OUT_DIR}/${jsonName} already exists! Skipping."
       continue
     }
+    echo ${jsonName} > /dev/stderr
     <<< "${json}" jq > "${OUT_DIR}/${jsonName}" || {
       echo -e "\n ERROR in json:\n${json}" > /dev/stderr
       exec 3>&-
@@ -119,7 +124,7 @@ extract()
 
 decompose()
 {
-  echo
+  echo " > templating compositions " > /dev/stderr
   local PROVIDER_CONFIG_NAME=${PROVIDER_CONFIG_NAME:-}
   if [ "$1" ]
   then
@@ -155,12 +160,12 @@ decompose()
     sourceName=${sourceName%.yaml}
 
     [ "${USED[${sourceName}]}" ] || {
-      echo "> $sourceName unused. Skipping."
+      _dbg "> $sourceName unused. Skipping."
       continue
     }
 
     [ -f ${OUT_DIR}/compositions/${sourceName}.yaml ] && {
-      echo "WARNING: ${OUT_DIR}/compositions/${sourceName}.yaml already exists! Skipping."
+      _dbg "${OUT_DIR}/compositions/${sourceName}.yaml already exists! Skipping."
       continue
     }
 
@@ -199,7 +204,7 @@ apply_all()
 
 cleanup()
 {
-  [ "$MSG_BOTTOM" ] && echo -e "\n\e[35;1m$MSG_BOTTOM\e[0m" >/dev/stderr
+  [ "$MSG_BOTTOM" ] && echo -e "\e[35;1m$MSG_BOTTOM\e[0m" >/dev/stderr
 }
 
 
