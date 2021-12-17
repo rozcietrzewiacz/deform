@@ -515,3 +515,21 @@ k-children ()
     kubectl get ${kid0} $@
   done
 }
+
+
+related_events ()
+{
+    local parent_res=$(kubectl get $@ -o json | jq '.spec.resourceRef' -c);
+    echo -e ">> Discovered parent resource:\n  $parent_res\n querying events..." > /dev/stderr;
+    kubectl get events -n default -o json \
+      | jq '
+        [
+          .items[]
+          |select(.involvedObject.name=='$( <<<$parent_res jq '.name' )')
+          |{type,reason,age:(now - (.lastTimestamp|fromdate)|floor),message}
+        ]
+        |sort_by(.age)
+        |reverse
+        |.[]
+        '
+}
