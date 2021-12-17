@@ -57,10 +57,16 @@ imports:
 - from: metadata.annotations['extracted.import.deform.io/awsRegion']
   to: spec.forProvider.region
 
-#XXX - from: "spec.tags.Maintainer"
-#  to: "spec.forProvider.tags"
-#- from: "spec.tags.Name"
-#  to: "spec.forProvider.tags"
+- from: "spec.tags"
+  to: "spec.forProvider.tags"
+- from: "metadata.name"
+  to: "spec.forProvider.masterUserPasswordSecretRef.name"
+fixedPart:
+  forProvider:
+    masterUserPasswordSecretRef:
+      namespace: default #TODO: replace with a configurable(/extracted?) value
+      key: password
+
 exports:
 - from: "spec.endpoint"
   at: "status.atProvider.endpoint"
@@ -74,6 +80,20 @@ exports:
   at: "status.atProvider.dbiResourceID"
 - from: "spec.status"
   at: "status.atProvider.dbInstanceStatus"
+
+extraRawResources:
+- k8sProviderConfigName: provider-kubernetes
+  manifest:
+    apiVersion: v1
+    kind: Secret
+    type: Opaque
+    metadata:
+      namespace: default #TODO: replace with a configurable(/extracted?) value
+  patches:
+  - from: metadata.name
+    to: metadata.name
+  - from: spec.password
+    to: spec.forProvider.manifest.data.password
 
 #unidentified:
 #- from: "spec.delete_automated_backups"
