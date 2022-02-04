@@ -519,17 +519,46 @@ k-children ()
 
 related_events ()
 {
-    local parent_res=$(kubectl get $@ -o json | jq '.spec.resourceRef' -c);
-    echo -e ">> Discovered parent resource:\n  $parent_res\n querying events..." > /dev/stderr;
+  _get_related()
+  {
+    local res=$1
+    [ "${res}" ] && \
     kubectl get events -n default -o json \
       | jq '
         [
           .items[]
-          |select(.involvedObject.name=='$( <<<$parent_res jq '.name' )')
+          |select(.involvedObject.name=='$( <<<$res jq '.name' )')
           |{type,reason,age:(now - (.lastTimestamp|fromdate)|floor),message}
         ]
         |sort_by(.age)
         |reverse
         |.[]
         '
+  }
+
+  local obj_full=$(kubectl get $@ -o json | jq -c)
+  local obj_spec=$(<<<${obj_full} jq -c '.spec')
+  local obj_meta=$(<<<${obj_full} jq -c '{apiVersion,kind,name:.metadata.name}')
+  echo -e ">> Querying events directly referencing ${obj_meta}..." > /dev/stderr
+  _get_related "${obj_meta}"
+
+  local parent_res=$(<<<${obj_spec} jq -c '.resourceRef?|select(.!=null)')
+  if [ "${parent_res}" ]
+  then
+    echo -e ">> Discovered parent resource:\n  $(<<<${parent_res} jq -cC)\n querying events..." > /dev/stderr;
+    _get_related "${parent_res}"
+  fi
+
+  local child_res=$(<<<${obj_spec} jq -c '.resourceRefs[]?|select(.!=null)')
+  if [ "$child_res" ]
+  then
+    echo "${child_res}"
+    echo -e "\e[32m>> Discovered $(<<<$child_res wc -l) child resources:\e[0m" > /dev/stderr
+    echo "${child_res}" \
+      | while read -r child
+      do
+        echo " >>events for \"${child}\" <<"
+        _get_related "${child}"
+      done
+  fi
 }
