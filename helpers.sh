@@ -51,7 +51,7 @@ prep_files ()
   #
   #TODO: derive tf provider spec and crossplane crds jsons from provider name
   #TODO: generate the above files in a standardized manner
-  local crd_extracted_params=$(realpath ".cache/${provider}/xp-params_v*.json")
+  local crd_extracted_params=$(realpath .cache/${provider}/xp-params_v*.json)
   local terraform_specs=$(realpath ".cache/${provider}/tf-params_main.json")
   local xp_groupKinds=( $(< ${crd_extracted_params} \
     jq -r '"\(.id):\(.group + .kind)"' ))
