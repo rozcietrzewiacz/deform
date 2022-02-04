@@ -9,7 +9,7 @@ def param_summary:
 .
 # | select(.spec.names.kind == "SNSTopic")
 | .spec
-| (.versions[] | select(.served == true)) as $version
+| (.versions[] | select(.storage == true)) as $version
 | $version.schema.openAPIV3Schema.properties as $schema
 ### TODO: ADD .description
 |
