@@ -73,7 +73,7 @@ populate_cache ()
   local tf_docs="terraform-provider-${provider}"
   local xp_crds="crossplane-provider-${provider}"
   local tf_tag="main"
-  local xp_tag="v0.19.0"
+  local xp_tag="v0.23.0"
 
   (
     cd ".cache/${provider}"
