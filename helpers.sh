@@ -1,3 +1,6 @@
+#!/usr/bin/bash
+. lib/base.sh
+
 _yaml_header()
 {
   #In1: raw kind name
@@ -43,6 +46,7 @@ prep_files ()
   #IN1: tfstate-show json
   #IN2: provider name (e.g. "aws", "gcp")
   local tfstate_show=${1}
+  _arg_required 1 "${tfstate_show}" tfstate-show file || return 1
   local provider=${2-aws}
   #
   #TODO: derive tf provider spec and crossplane crds jsons from provider name
@@ -63,10 +67,6 @@ prep_files ()
     local key=${2}
     shift 2
     < ${crd_extracted_params} jq -r 'select(.id=="'${id}'").'${key} $@
-  }
-  __e()
-  {
-    echo "$@" > /dev/stderr
   }
 
   _find_target_crd_for_given_raw_crd()
@@ -164,17 +164,17 @@ prep_files ()
        [ -r "_edit_${yaml}"    ] || \
        [ -r "${yaml}"          ]
     then
-      __e -e "\n>> \e[43;1m ${raw_kind} \e[0m: SKIPPING; $(ls -1 *${yaml}) already exists"
+      e -e "\n>> \e[43;1m ${raw_kind} \e[0m: SKIPPING; $(ls -1 *${yaml}) already exists"
       continue
     fi
-    __e -e "\n>> \e[44;1m ${raw_kind} \e[0m: Found ${#paths[@]} json paths in spec";
-    __e " > finding crossplane CRD match..."
+    e -e "\n>> \e[44;1m ${raw_kind} \e[0m: Found ${#paths[@]} json paths in spec";
+    e " > finding crossplane CRD match..."
 
     # TODO This is ugly. Bouncing back and forth via "$group.$raw_kind" :/
     local crd_match=$(_find_target_crd_for_given_raw_crd ${raw_kind} ${paths[@]})
     if [ ! ${crd_match} ]
     then
-      __e -e " > \e[31;1mNo match found! Marking as missing.\e[0m"
+      e -e " > \e[31;1mNo match found! Marking as missing.\e[0m"
       ##TODO (?) output default header
       ##TODO (?) explode paths
       touch "_missing_${yaml}"
@@ -226,9 +226,9 @@ prep_files ()
         exports["${path}"]="status.atProvider.${attr_matches}"
       elif [ ${#arg_matches[@]} -gt 1 ] || [ ${#attr_matches[@]} -gt 1 ]
       then
-        __e "#ERROR: multiple matches found for ${path}:"
-        echo "#  ARG: ${arg_matches[@]}"
-        echo "# ATTR: ${attr_matches[@]}"
+        e "#ERROR: multiple matches found for ${path}"
+        echo "#possible  ARGs: ${arg_matches[@]}"
+        echo "#possible ATTRs: ${attr_matches[@]}"
       else
         unidentified+=( ${path} )
       fi
@@ -241,7 +241,7 @@ prep_files ()
     exec > _edit_${yaml}
     _yaml_header ${raw_kind} ${target_api_version} ${target_kind}
 
-    __e " > identified ${#imports[@]} argument path matches"
+    e " > identified ${#imports[@]} argument path matches"
     echo "imports:"
     for k in ${!imports[@]}
     do
@@ -249,7 +249,7 @@ prep_files ()
       echo "  to: \"${imports[$k]}\""
     done
 
-    __e " > identified ${#exports[@]} attribute path matches"
+    e " > identified ${#exports[@]} attribute path matches"
     echo "exports:"
     for k in ${!exports[@]}
     do
@@ -257,7 +257,7 @@ prep_files ()
       echo "  at: \"${exports[$k]}\""
     done
 
-    __e " > NOTE: found ${#unidentified[@]} unidentified paths"
+    e " > NOTE: found ${#unidentified[@]} unidentified paths"
     echo "#unidentified:"
     for path in ${unidentified[@]}
     do
@@ -422,7 +422,7 @@ apply_compositions()
   local MSG_BOTTOM=
   local PROVIDER_CONFIG_NAME=${PROVIDER_CONFIG_NAME:-}
   [ "$1" ] || {
-    echo "ERROR: You need to specifiy the provider" > /dev/stderr
+    e "ERROR: You need to specifiy the provider"
     return 1
   }
   local PROVIDER=${1}
@@ -430,11 +430,11 @@ apply_compositions()
   then
     local deformConfigs="$2"
   else
-    echo "WARNING: No deform config file specified."
+    e "WARNING: No deform config file specified."
     read -p "Itereate over all complete configs under ${PROVIDER}/? [Y/n] " re
     case "$re" in
       [Nn])
-        echo "Exiting"
+        e "Exiting"
         return 0
         ;;
       *)
@@ -445,7 +445,7 @@ apply_compositions()
   ### Detecting providerConfig, if not specified ###
   declare -a providerConfigs
   [ "$PROVIDER_CONFIG_NAME" ] || {
-    echo "PROVIDER_CONFIG_NAME not set. Attempting auto-detect..." > /dev/stderr
+    e "PROVIDER_CONFIG_NAME not set. Attempting auto-detect..."
     providerConfigs=( $(
       kubectl get ProviderConfig.${PROVIDER}.crossplane.io \
         -o jsonpath='{.items[*].metadata.name}') )
@@ -479,7 +479,7 @@ apply_compositions()
     then
       counter=$[ counter + 1 ]
     else
-      echo "### ERROR encountered in $config" > /dev/stderr
+      e "### ERROR encountered in $config"
     fi
   done > ${tmpCompositions}
   MSG_BOTTOM+="\nGenerated ${counter} compositions."
@@ -487,10 +487,10 @@ apply_compositions()
   kubectl apply -f "${tmpCompositions}"
   if [ $? -eq 0 ]
   then
-    echo "Compositions applied successfully." > /dev/stderr
+    e "Compositions applied successfully."
     if [ "${DEBUG}" ]
     then
-      echo "DEBUG enabled. Leaving "${tmpCompositions}" for inspection." > /dev/stderr
+      e "DEBUG enabled. Leaving "${tmpCompositions}" for inspection."
     else
       rm "${tmpCompositions}"
     fi
@@ -498,7 +498,7 @@ apply_compositions()
     MSG_BOTTOM+="\nFAILED to apply compositions. ${tmpCompositions} file left for manual inspection."
   fi
 
-  [ "$MSG_BOTTOM" ] && echo -e "\e[35;1m$MSG_BOTTOM\e[0m"
+  [ "$MSG_BOTTOM" ] && e -e "\e[35;1m$MSG_BOTTOM\e[0m"
 }
 
 
@@ -511,7 +511,7 @@ k-children ()
     local kid0=$( <<< "$kid" \
       jq -r '"\(.kind|ascii_downcase).\(.apiVersion|split("/")[0])/\(.name)"'
     )
-    echo "-------- ${kid0} -------" >/dev/stderr
+    e "-------- ${kid0} -------"
     kubectl get ${kid0} $@
   done
 }
@@ -539,26 +539,25 @@ related_events ()
   local obj_full=$(kubectl get $@ -o json | jq -c)
   local obj_spec=$(<<<${obj_full} jq -c '.spec')
   local obj_meta=$(<<<${obj_full} jq -c '{apiVersion,kind,name:.metadata.name}')
-  echo -e ">> Querying events directly referencing ${obj_meta}..." > /dev/stderr
+  e -e ">> Querying events directly referencing ${obj_meta}..."
   _get_related "${obj_meta}"
 
   local parent_res=$(<<<${obj_spec} jq -c '.resourceRef?|select(.!=null)')
   if [ "${parent_res}" ]
   then
-    echo -e ">> Discovered parent resource:\n  $(<<<${parent_res} jq -cC)\n querying events..." > /dev/stderr;
+    e -e ">> Discovered parent resource:\n  $(<<<${parent_res} jq -cC)\n querying events...";
     _get_related "${parent_res}"
   fi
 
   local child_res=$(<<<${obj_spec} jq -c '.resourceRefs[]?|select(.!=null)')
   if [ "$child_res" ]
   then
-    echo "${child_res}"
-    echo -e "\e[32m>> Discovered $(<<<$child_res wc -l) child resources:\e[0m" > /dev/stderr
+    e -e "\e[32m>> Discovered $(<<<${child_res} wc -l) child resources:\e[0m"
     echo "${child_res}" \
-      | while read -r child
-      do
-        echo " >>events for \"${child}\" <<"
-        _get_related "${child}"
-      done
+    | while read -r child
+    do
+      e " >>events for \"${child}\" <<"
+      _get_related "${child}"
+    done
   fi
 }

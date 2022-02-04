@@ -1,3 +1,5 @@
+#!/usr/bin/bash
+. lib/base.sh
 
 tf_extract_provider_params ()
 {
@@ -31,10 +33,10 @@ _yaml2json()
 {
   if which yaml2json &> /dev/null
   then
-    echo "> Using yaml2json tool" >&2
+    e "> Using yaml2json tool"
     < ${1} yaml2json
   else
-    echo "> yaml2json tool not found. Using kubectl." >&2
+    e "> yaml2json tool not found. Using kubectl."
     #One could use something like yq here... But kubectl is actually faster,
     # as long as we use local (kind) cluster
     #KUBECONFIG=
@@ -64,7 +66,7 @@ populate_cache ()
 {
   [ ${1} ] ||
   {
-    echo "usage: $FUNCNAME <provider>" >/dev/stderr
+    e "usage: $FUNCNAME <provider>"
     return
   }
   local provider=$1
@@ -101,7 +103,7 @@ populate_cache ()
       | jq -c
     ) \
     | tee \
-      >( jq -Cc '{kind}' ) \
+      >( jq -Cc "{tf_${provider}: .kind}" ) \
       >( echo ">> Extracted spec of $(wc -l) modules" ) \
     > tf-params_${tf_tag}.json
 
@@ -126,7 +128,7 @@ populate_cache ()
     < ${xp_crds}/crds_${xp_tag}.json \
       jq -c -f "${jq_dir}/transform-crossplane-crds.jq" \
     | tee \
-      >( jq -Cc '{id}' ) \
+      >( jq -Cc '{xp_id:.id}' ) \
       >( echo ">> Extracted spec of $(wc -l) crds" ) \
     > xp-params_${xp_tag}.json
   ) #// inside .cache/${provider}
