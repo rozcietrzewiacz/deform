@@ -29,8 +29,35 @@ tf_extract_provider_params ()
 
 _yaml2json()
 {
-  #One could use something like yq here... But kubectl is actually much faster!
-  KUBECONFIG= kubectl apply --dry-run="client" --validate=false -o json -f -
+  if which yaml2json &> /dev/null
+  then
+    echo "> Using yaml2json tool" >&2
+    < ${1} yaml2json
+  else
+    echo "> yaml2json tool not found. Using kubectl." >&2
+    #One could use something like yq here... But kubectl is actually faster,
+    # as long as we use local (kind) cluster
+    #KUBECONFIG=
+    kubectl apply --dry-run="client" --validate=false -o json -f ${1} \
+      | jq -c '.items[]'
+  fi
+}
+
+_sanitize_yaml()
+{
+  #See: github.com/bronze1man/yaml2json/issues/23
+  # - Tools like `yaml2json` by "bronze1man" break when there's
+  # a "New Document" marker (---) at the bottom of yaml.
+  # We strip it just in case.
+  local inFile=$1
+  local lastLine=$(tail -n1 ${inFile})
+  if [ "$lastLine" == "---" ]
+  then
+    echo ">> WARNING: detected empty doc at the end of ${inFile}. Sanitizing..."
+    local tmpfile=$(mktemp "XXXXXX.yaml")
+    head -n -1 ${inFile} > ${tmpfile} \
+      && mv ${tmpfile} ${inFile}
+  fi
 }
 
 populate_cache ()
@@ -54,15 +81,6 @@ populate_cache ()
     ## TODO(?) just move to a standalone script
     [ -d ${tf_docs}/website/docs/r ] || \
     (
-      ## v1
-      #git init $tf_docs
-      #cd $tf_docs
-      #git remote add origin https://github.com/terraform-providers/terraform-provider-aws.git
-      #git config core.sparseCheckout true
-      #echo "website/docs/r/" >> .git/info/sparse-checkout
-      #git pull --depth=5 --no-tags origin main #XXX TAG!!
-
-      ## v2
       git clone --depth=1 --filter=blob:none --sparse \
         https://github.com/terraform-providers/${tf_docs}.git \
         ${tf_docs}
@@ -91,11 +109,15 @@ populate_cache ()
 
     #TODO: most fit for a Makefile
     #TODO: force re-download
-    [ -r ${xp_crds}/crds_${xp_tag}.json ] \
+    [ -r ${xp_crds}/crds_${xp_tag}.yaml ] \
     || \
     curl "https://doc.crds.dev/raw/github.com/crossplane/provider-${provider}@${xp_tag}" \
-    | _yaml2json \
-    | jq -c '.items' \
+    > ${xp_crds}/crds_${xp_tag}.yaml
+    _sanitize_yaml ${xp_crds}/crds_${xp_tag}.yaml
+
+    [ -r ${xp_crds}/crds_${xp_tag}.json ] \
+    || \
+    _yaml2json ${xp_crds}/crds_${xp_tag}.yaml \
     > ${xp_crds}/crds_${xp_tag}.json
 
 

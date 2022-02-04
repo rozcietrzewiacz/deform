@@ -6,7 +6,7 @@ def param_summary:
   end
 ;
 
-.[]
+.
 # | select(.spec.names.kind == "SNSTopic")
 | .spec
 | (.versions[] | select(.served == true)) as $version
