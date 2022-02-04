@@ -11,19 +11,16 @@
   * compatible terraform versions
   * compatible crossplane versions
   * compatible deform (api) versions
-  * default paths/urls
-  * operation modes: full/used/minimal param set conversion;
 - validate against corner cases like:
   * "servicediscovery"
   * "PublicDNSNamespace"
+- add script/instructions for installing and configuring additional crossplane providers - such as `provider-kubernetes` to generate Secrets (see: `extraRawResources` in `aws/AwsDbInstance.yaml`)
+- detect and base64-encode fields called `password` within each "raw XR"
+  (NOTE: it's not very "raw" anymore)
 
 ## functionality
 - propagate the status of child resource to the parent
   * at the stage of XRD extraction, identify "spec" paths that are actually status and mark (reaname) them as such
-- Problem: Some tf resource modules don't include region information explicitly,
-  while it's required by crossplane counterparts
-  Solution 1:
-    In many cases, the region can be extracted from the ARN field. It can be extracted by the helm chart.
 - Experiment with identifying possible input variables within a single imported tf module (state)
   * extract all defined string variables, along with their paths
   * sort by value
@@ -37,8 +34,6 @@
   * kind config file for cluster creation
   * scripted(?) helm installation of crossplane+provider
   * alternatively: use the new installation means used by crossplane itself (see gh issue from a few months ago)
-- add script/instructions for installing and configuring additional crossplane providers - such as `provider-kubernetes` to generate Secrets (see: `extraRawResources` in `aws/AwsDbInstance.yaml`)
-- detect and base64-convert fields called `password`
 - add a general warning about potentially sensitive data contained in:
   * terraform state output files,
   * the `in/` directory,
