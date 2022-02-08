@@ -12,4 +12,5 @@
         "_*"
       )
   )
+| select( .values? != null )
 | {type,name,address, "values":.values}
