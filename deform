@@ -73,7 +73,6 @@ extract()
   {
     if [ "$1" == "xr" ]
     then
-      ##TODO: use --argjson instead
       jq -c \
         --argjson supported "[${SUPPORTED_JSON}]" \
         'select(
@@ -97,6 +96,8 @@ extract()
       --arg provider ${PROVIDER} \
     | jq -s -f jq/from-type+value-to-raw-${outType}.jq -c \
     | filter $outType
+    # TODO: Generalize filtering. Possibly move things like conversion
+    # of `tags` here. Would be nice to integrate with provider_extractor as well
   )
 
   while read -r json <&3
