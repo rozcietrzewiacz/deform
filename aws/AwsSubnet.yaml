@@ -1,0 +1,27 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsSubnet
+target:
+  apiVersion: ec2.aws.crossplane.io/v1beta1
+  kind: Subnet
+imports:
+- from: metadata.annotations['extracted.import.deform.io/awsRegion']
+  to: spec.forProvider.region
+- from: spec.tags
+  to: spec.forProvider.tags
+- from: "spec.arn"
+  to: "metadata.annotations['import.deform.io/arn']"
+- from: "spec.availability_zone"
+  to: "spec.forProvider.availabilityZone"
+- from: "spec.vpc_id"
+  to: "spec.forProvider.vpcId"
+- from: "spec.cidr_block"
+  to: "spec.forProvider.cidrBlock"
+- from: "spec.availability_zone_id"
+  to: "spec.forProvider.availabilityZoneId"
+
+#exports:
+#??
+#
+#unidentified:
+#- from: "spec.owner_id"

@@ -1,0 +1,35 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsLaunchConfiguration
+  #!! This terraform resource seems to have been deprecated in favor of
+  # aws_launch_configuration - which more closely resembles xp LaunchTemplate
+target:
+  apiVersion: ec2.aws.crossplane.io/v1alpha1
+  kind: LaunchTemplate
+imports:
+- from: "spec.arn"
+  to: "metadata.annotations['import.deform.io/arn']"
+- from: "spec.name"
+  to: "spec.forProvider.launchTemplateName"
+- from: "spec.image_id"
+  to: "spec.forProvider.launchTemplateData.imageID"
+- from: "spec.instance_type"
+  to: "spec.forProvider.launchTemplateData.instanceType"
+- from: "spec.ebs_optimized"
+  to: "spec.forProvider.launchTemplateData.ebsOptimized"
+- from: "spec.enable_monitoring"
+  to: "spec.forProvider.launchTemplateData.monitoring.enabled"
+- from: "spec.user_data_base64"
+  to: "spec.forProvider.launchTemplateData.userData"
+
+#exports:
+#??
+#
+#unidentified:
+#- from: "spec.iam_instance_profile"
+#- from: "spec.name_prefix"
+#
+#?? optional - possibly doable via forProvider.launchTemplateData.blockDeviceMappings
+#- from: "spec.root_block_device.0.delete_on_termination"
+#?? optional
+#- from: "spec.security_groups.0"

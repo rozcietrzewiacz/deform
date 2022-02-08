@@ -1,0 +1,24 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsRouteTable
+target:
+  apiVersion: ec2.aws.crossplane.io/v1alpha4
+  kind: RouteTable
+imports:
+- from: metadata.annotations['extracted.import.deform.io/awsRegion']
+  to: spec.forProvider.region
+- from: "spec.vpc_id"
+  to: "spec.forProvider.vpcId"
+- from: "spec.tags"
+  to: "spec.forProvider.tags"
+
+#XXX XXX 
+#TODO: This gets tricky: It looks like terraform uses separate
+# aws_route_table_association resource, while crossplane simplifies this by
+# including the association definition within RouteTable spec itself.
+#
+exports:
+- from: "spec.owner_id"
+  at: "status.atProvider.ownerId"
+#unidentified:
+#- from: "spec.route.0.cidr_block"

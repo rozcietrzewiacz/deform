@@ -1,0 +1,23 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsAcmCertificate
+target:
+  apiVersion: acm.aws.crossplane.io/v1beta1
+  kind: Certificate
+imports:
+- from: metadata.annotations['extracted.import.deform.io/awsRegion']
+  to: spec.forProvider.region
+- from: "spec.tags"
+  to: "spec.forProvider.tags"
+- from: "spec.options[0].certificate_transparency_logging_preference"
+  to: "spec.forProvider.options.certificateTransparencyLoggingPreference"
+- from: "spec.arn"
+  to: "metadata.annotations['import.deform.io/arn']"
+- from: "spec.validation_method"
+  to: "spec.forProvider.validationMethod"
+- from: "spec.domain_name"
+  to: "spec.forProvider.domainName"
+- from: "spec.domain_validation_options[0].domain_name"
+  to: "spec.forProvider.domainValidationOptions.domainName"
+exports:
+#unidentified:

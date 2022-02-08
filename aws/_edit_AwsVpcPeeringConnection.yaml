@@ -1,0 +1,23 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsVpcPeeringConnection
+target:
+  apiVersion: ec2.aws.crossplane.io/v1alpha1
+  kind: VPCPeeringConnection
+imports:
+- from: metadata.annotations['extracted.import.deform.io/awsRegion']
+  to: spec.forProvider.region
+- from: "spec.peer_region"
+  to: "spec.forProvider.peerRegion"
+- from: "spec.peer_vpc_id"
+  to: "spec.forProvider.peerVPCID"
+- from: "spec.vpc_id"
+  to: "spec.forProvider.vpcID"
+- from: "spec.peer_owner_id"
+  to: "spec.forProvider.peerOwnerID"
+exports:
+- from: "spec.tags.0.key"
+  at: "status.atProvider.tags"
+#unidentified:
+#- from: "spec.accept_status"
+#- from: "spec.requester.0.allow_remote_vpc_dns_resolution"

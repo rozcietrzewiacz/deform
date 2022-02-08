@@ -1,0 +1,18 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsDbSubnetGroup
+target:
+  apiVersion: database.aws.crossplane.io/v1beta1
+  kind: DBSubnetGroup
+imports:
+- from: "spec.arn"
+  to: "metadata.annotations['import.deform.io/arn']"
+- from: "spec.subnet_ids"
+  to: "spec.forProvider.subnetIds"
+- from: "spec.tags.Name"
+  to: "spec.forProvider.tags"
+- from: "spec.description"
+  to: "spec.forProvider.description"
+exports:
+#unidentified:
+#- from: "spec.name"

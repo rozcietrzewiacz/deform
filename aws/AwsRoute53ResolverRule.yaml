@@ -1,0 +1,29 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsRoute53ResolverRule
+target:
+  apiVersion: route53resolver.aws.crossplane.io/v1alpha1
+  kind: ResolverRule
+imports:
+- from: metadata.annotations['extracted.import.deform.io/awsRegion']
+  to: spec.forProvider.region
+- from: "spec.arn"
+  to: "metadata.annotations['import.deform.io/arn']"
+- from: "spec.resolver_endpoint_id"
+  to: "spec.forProvider.resolverEndpointID"
+- from: "spec.domain_name"
+  to: "spec.forProvider.domainName"
+- from: "spec.rule_type"
+  to: "spec.forProvider.ruleType"
+- from: "spec.name"
+  to: "spec.forProvider.name"
+- from: "spec.target_ip"
+  to: "spec.forProvider.targetIPs[0]"
+
+- from: "spec.tags"
+  to: "spec.forProvider.tags"
+exports:
+- from: "spec.owner_id"
+  at: "status.atProvider.ownerID"
+- from: "spec.share_status"
+  at: "status.atProvider.shareStatus"

@@ -1,0 +1,41 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsEip
+target:
+  apiVersion: ec2.aws.crossplane.io/v1beta1
+  kind: Address
+imports:
+- from: metadata.annotations['extracted.import.deform.io/awsRegion']
+  to: spec.forProvider.region
+- from: "spec.tags"
+  to: "spec.forProvider.tags"
+- from: "spec.network_border_group"
+  to: "spec.forProvider.networkBorderGroup"
+- from: "spec.public_ipv4_pool"
+  to: "spec.forProvider.publicIpv4Pool"
+- from: "spec.vpc"
+  to: "spec.forProvider.domain"
+  transforms:
+  - type: convert
+    convert:
+      toType: string
+  - map:
+      "true": "vpc"
+      "false": "standard"
+    type: map
+
+exports:
+- from: "spec.public_ip"
+  at: "status.atProvider.publicIp"
+- from: "spec.private_ip"
+  at: "status.atProvider.privateIpAddress"
+- from: "spec.association_id"
+  at: "status.atProvider.associationId"
+- from: "spec.domain"
+  at: "status.atProvider.domain"
+- from: "spec.network_interface"
+  at: "status.atProvider.networkInterfaceId"
+
+#unidentified:
+#- from: "spec.private_dns"
+#- from: "spec.public_dns"

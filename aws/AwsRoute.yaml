@@ -1,0 +1,24 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsRoute
+target:
+  apiVersion: ec2.aws.crossplane.io/v1alpha1
+  kind: Route
+imports:
+- from: "spec.destination_cidr_block"
+  to: "spec.forProvider.destinationCIDRBlock"
+- from: "spec.gateway_id"
+  to: "spec.forProvider.gatewayId"
+- from: "spec.nat_gateway_id"
+  to: "spec.forProvider.natGatewayId"
+- from: "spec.route_table_id"
+  to: "spec.forProvider.routeTableId"
+- from: metadata.annotations['extracted.import.deform.io/awsRegion']
+  to: spec.forProvider.region
+
+#exports:
+#??
+#
+#unidentified:
+#- from: "spec.origin"
+#- from: "spec.state"

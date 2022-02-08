@@ -1,0 +1,20 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsNatGateway
+target:
+  apiVersion: ec2.aws.crossplane.io/v1alpha1
+  kind: NATGateway
+imports:
+- from: "spec.tags.KubernetesCluster"
+  to: "spec.forProvider.tags"
+- from: "spec.allocation_id"
+  to: "spec.forProvider.allocationId"
+- from: "spec.subnet_id"
+  to: "spec.forProvider.subnetId"
+exports:
+- from: "spec.network_interface_id"
+  at: "status.atProvider.natGatewayAddresses[0].networkInterfaceId"
+- from: "spec.private_ip"
+  at: "status.atProvider.natGatewayAddresses[0].privateIp"
+- from: "spec.public_ip"
+  at: "status.atProvider.natGatewayAddresses[0].publicIp"

@@ -1,0 +1,16 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsInternetGateway
+target:
+  apiVersion: ec2.aws.crossplane.io/v1beta1
+  kind: InternetGateway
+imports:
+- from: "spec.arn"
+  to: "metadata.annotations['import.deform.io/arn']"
+- from: "spec.vpc_id"
+  to: "spec.forProvider.vpcId"
+- from: "spec.tags"
+  to: "spec.forProvider.tags"
+exports:
+- from: "spec.owner_id"
+  at: "status.atProvider.ownerID"

@@ -1,0 +1,23 @@
+source:
+  apiVersion: "raw.import.deform.io/v1alpha1"
+  kind: AwsRoute53Zone
+target:
+  apiVersion: route53.aws.crossplane.io/v1alpha1
+  kind: HostedZone
+imports:
+- from: "spec.vpc[0].vpc_id"
+  to: "spec.forProvider.vpc.vpcId"
+- from: "spec.vpc[0].vpc_region"
+  to: "spec.forProvider.vpc.vpcRegion"
+- from: "spec.name"
+  to: "spec.forProvider.name"
+- from: "spec.comment"
+  to: "spec.forProvider.config.comment"
+exports:
+- from: "spec.name_servers"
+  at: "status.atProvider.delegationSet.nameServers"
+- from: "spec.zone_id"
+  at: "status.atProvider.hostedZone.id"
+
+#unidentified:
+#- from: "spec.tags"
