@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/bash
 #Usage:
 # $ ./deform <tfstate-output.json> [provider]
 #
@@ -8,15 +8,13 @@
 #TODO: use getopts
 #TODO: params, such as --only-supported, --debug
 
+. lib/base.sh
+
 #_json2yaml()
 #{
 #  KUBECONFIG= kubectl apply --dry-run="client" --validate=false --record=false -o yaml -f -
 #}
 
-_dbg()
-{
-  [ $DEBUG ] && echo "DEBUG: " $@ > /dev/stderr
-}
 
 prepare()
 {
@@ -37,7 +35,7 @@ prepare()
   then
     PROVIDER=${2}
   else
-    ###echo "WARNING: No provider given explicitly. Auto-selecting based on top occurences:" >/dev/stderr
+    ###_e "WARNING: No provider given explicitly. Auto-selecting based on top occurences:"
     PROVIDER=$(
       < ${INPUT} jq -r -f jq/list-module-prefixes.jq \
       | sort \
@@ -62,13 +60,13 @@ prepare()
   _dbg "Supported objects for $PROVIDER:\n${SUPPORTED_JSON}" -e
 
   OUT_DIR="out/${INPUT#*/}"
-  echo ">> Files will be generated in ${OUT_DIR}/" >/dev/stderr
+  _e ">> Files will be generated in ${OUT_DIR}/"
   mkdir -p ${OUT_DIR}/{xr,xrd,composition}s
 }
 
 extract()
 {
-  echo " > extracting $1s" > /dev/stderr
+  _e " > extracting $1s"
   filter()
   {
     if [ "$1" == "xr" ]
@@ -110,9 +108,9 @@ extract()
       _dbg "${OUT_DIR}/${jsonName} already exists! Skipping."
       continue
     }
-    echo ${jsonName} > /dev/stderr
+    _e ${jsonName}
     <<< "${json}" jq > "${OUT_DIR}/${jsonName}" || {
-      echo -e "\n ERROR in json:\n${json}" > /dev/stderr
+      _e -e "\n ERROR in json:\n${json}"
       exec 3>&-
       exit 3
     }
@@ -125,7 +123,7 @@ extract()
 
 decompose()
 {
-  echo " > templating compositions " > /dev/stderr
+  _e " > templating compositions "
   local PROVIDER_CONFIG_NAME=${PROVIDER_CONFIG_NAME:-}
   if [ "$1" ]
   then
@@ -136,7 +134,7 @@ decompose()
   ### Detecting providerConfig, if not specified ###
   declare -a providerConfigs
   [ "$PROVIDER_CONFIG_NAME" ] || {
-    echo " >> PROVIDER_CONFIG_NAME not set. Attempting auto-detect..." > /dev/stderr
+    _e " >> PROVIDER_CONFIG_NAME not set. Attempting auto-detect..."
     providerConfigs=( $(
       kubectl get ProviderConfig.${PROVIDER}.crossplane.io \
         -o jsonpath='{.items[*].metadata.name}') )
@@ -177,12 +175,12 @@ decompose()
       --values=${config} \
       --set providerConfig=${PROVIDER_CONFIG_NAME} \
     > ${OUT_DIR}/compositions/${sourceName}.yaml
-    echo compositions/${sourceName}.yaml > /dev/stderr
+    _e compositions/${sourceName}.yaml
     if [ $? -eq 0 ]
     then
       counter=$[ counter + 1 ]
     else
-      echo "### ERROR encountered in $config" > /dev/stderr
+      _e "### ERROR encountered in $config"
     fi
   done
   MSG_BOTTOM+="\nGenerated ${counter} compositions."
@@ -198,14 +196,14 @@ apply_all()
     then
       local msg="ERROR encountered while applying ${component}"
       MSG_BOTTOM+="\n${msg}"
-      echo "${msg}" >/dev/stderr
+      _e "${msg}"
     fi
   done
 }
 
 cleanup()
 {
-  [ "$MSG_BOTTOM" ] && echo -e "\e[35;1m$MSG_BOTTOM\e[0m" >/dev/stderr
+  [ "$MSG_BOTTOM" ] && _e -e "\e[35;1m$MSG_BOTTOM\e[0m"
 }
 
 
