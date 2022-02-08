@@ -33,10 +33,10 @@ _yaml2json()
 {
   if which yaml2json &> /dev/null
   then
-    e "> Using yaml2json tool"
+    _e "> Using yaml2json tool"
     < ${1} yaml2json
   else
-    e "> yaml2json tool not found. Using kubectl."
+    _e "> yaml2json tool not found. Using kubectl."
     #One could use something like yq here... But kubectl is actually faster,
     # as long as we use local (kind) cluster
     #KUBECONFIG=
@@ -66,7 +66,7 @@ populate_cache ()
 {
   [ ${1} ] ||
   {
-    e "usage: $FUNCNAME <provider>"
+    _e "usage: $FUNCNAME <provider>"
     return
   }
   local provider=$1

@@ -164,17 +164,17 @@ prep_files ()
        [ -r "_edit_${yaml}"    ] || \
        [ -r "${yaml}"          ]
     then
-      e -e "\n>> \e[43;1m ${raw_kind} \e[0m: SKIPPING; $(ls -1 *${yaml}) already exists"
+      _e -e "\n>> \e[43;1m ${raw_kind} \e[0m: SKIPPING; $(ls -1 *${yaml}) already exists"
       continue
     fi
-    e -e "\n>> \e[44;1m ${raw_kind} \e[0m: Found ${#paths[@]} json paths in spec";
-    e " > finding crossplane CRD match..."
+    _e -e "\n>> \e[44;1m ${raw_kind} \e[0m: Found ${#paths[@]} json paths in spec";
+    _e " > finding crossplane CRD match..."
 
     # TODO This is ugly. Bouncing back and forth via "$group.$raw_kind" :/
     local crd_match=$(_find_target_crd_for_given_raw_crd ${raw_kind} ${paths[@]})
     if [ ! ${crd_match} ]
     then
-      e -e " > \e[31;1mNo match found! Marking as missing.\e[0m"
+      _e -e " > \e[31;1mNo match found! Marking as missing.\e[0m"
       ##TODO (?) output default header
       ##TODO (?) explode paths
       touch "_missing_${yaml}"
@@ -226,7 +226,7 @@ prep_files ()
         exports["${path}"]="status.atProvider.${attr_matches}"
       elif [ ${#arg_matches[@]} -gt 1 ] || [ ${#attr_matches[@]} -gt 1 ]
       then
-        e "#ERROR: multiple matches found for ${path}"
+        _e "#ERROR: multiple matches found for ${path}"
         echo "#possible  ARGs: ${arg_matches[@]}"
         echo "#possible ATTRs: ${attr_matches[@]}"
       else
@@ -241,7 +241,7 @@ prep_files ()
     exec > _edit_${yaml}
     _yaml_header ${raw_kind} ${target_api_version} ${target_kind}
 
-    e " > identified ${#imports[@]} argument path matches"
+    _e " > identified ${#imports[@]} argument path matches"
     echo "imports:"
     for k in ${!imports[@]}
     do
@@ -249,7 +249,7 @@ prep_files ()
       echo "  to: \"${imports[$k]}\""
     done
 
-    e " > identified ${#exports[@]} attribute path matches"
+    _e " > identified ${#exports[@]} attribute path matches"
     echo "exports:"
     for k in ${!exports[@]}
     do
@@ -257,7 +257,7 @@ prep_files ()
       echo "  at: \"${exports[$k]}\""
     done
 
-    e " > NOTE: found ${#unidentified[@]} unidentified paths"
+    _e " > NOTE: found ${#unidentified[@]} unidentified paths"
     echo "#unidentified:"
     for path in ${unidentified[@]}
     do
@@ -280,57 +280,96 @@ cover ()
     return
   fi
   shift
-  ###XXX Consider: https://stackoverflow.com/questions/26717277/accessing-a-json-object-in-bash-associative-array-list-another-model/51690860#51690860
+  _support()
+  {
+    local kind=$1
+    [ -f "${provider}/${kind}.yaml" ] && {
+      _greenb $(ls "${provider}/${kind}.yaml")
+      return
+    }
+    [ -f "${provider}/_edit_${kind}.yaml" ] && {
+      _yellow "(WIP)"
+      return
+    }
+    [ -f "${provider}/_missing_${kind}.yaml" ] && {
+      _redb "(UNSUPPORTED)"
+      return
+    }
+    echo -n "(UNKNOWN)"
+  }
+  #Use "cat" to support supplying multiple files/wildcards as input arguments
   cat $@ \
     | jq --arg provider ${provider} -f jq/from-tfstate-output_parse-modules.jq \
     | jq -s -f jq/from-type+value-to-raw-xr.jq -c \
     | jq '.kind' -r | sort | uniq -c | sort -g \
     | while read count kind; do
-      echo -e "${kind}($count)\t$(ls ${provider}/${kind}.yaml 2>/dev/null || if [ -f ${provider}/_edit_${kind}.yaml ]; then echo -n "(WIP)"; else echo -n "(MISSING)"; fi )"
+      echo -e "${count}\t${kind}\t$(_support ${kind})"
     done \
-    | column -t \
-    | while IFS=$'\r\n' read -r LINE; do
-      echo -e "\e[35m >> \e[0m $LINE"
-    done
+    | column -t
 }
 
 cover_stats()
 {
-  colorize()
+  local countBy
+  summary()
   {
-    local color=$1
-    local needle=$2
-    local col
-    local ret=$'\e[0m'
-    case $color in
-      RED)
-        col=$'\e[31;1m'
-        ;;
-      ORANGE)
-        col=$'\e[33;1m';
-        ;;
-      BLUE)
-        col=$'\e[34;1m';
-        ;;
-    esac
-    sed  -E "s#(${needle})#${col}\0${ret}#g"
+    local file=${1} total=0 supported=0 wip=0 unsupported=0 unknown=0 add=0
+    while read count kind status
+    #TODO (?) Possibly extra advanced stats: declare -A Kinds
+    do
+      if [ "$countBy" == "KINDS" ]; then add=1; else add=${count}; fi
+      : $[ total += add ]
+      _dbg "HERE: $count $kind $status"
+      case $status in
+        *"${kind}.yaml"*)
+          : $[ supported += add ]
+          _dbg "SUPPORTED $kind found - total supported so far: $supported"
+          ;;
+        *"(WIP)"*)
+          : $[ wip += add ]
+          ;;
+        *"(UNSUPPORTED)"*)
+          : $[ unsupported += add ]
+          ;;
+        *"(UNKNOWN)"*)
+          : $[ unknown += add ]
+          ;;
+      esac
+    done
+    local YAY=
+    if [ $total -eq $supported ]; then YAY=$(_greenb "(ALL!)"); fi
+    local check=$[ supported + wip + unsupported + unknown ]
+    echo "$file $total ${supported}${YAY} $wip $unsupported $unknown"
   }
 
   local provider=$1
   if [ ! "${provider}" ] || [ ! -d "${provider}" ]
   then
-    echo "Usage: $FUNCNAME <provider> FILES..."
+    _e "Usage: $FUNCNAME <provider> [-r] FILES..."
+    _e "  If -r parameter is given, the stats are presented based on exact" \
+       " resource numbers defined for each individual kind within each file." \
+       " Otherwise, only the number of supported kinds is considered."
     return
   fi
   shift
-  for f in "$@"
-  do
-    #TODO: Optimize - remove second invocation of "cover"
-    cover ${provider} $f \
-    | echo ">> ${f} $(grep -cE '(.yaml$)')/$( cover ${provider} ${f} | wc -l  )" \
-    | colorize BLUE '>>' \
-    | sed -E 's#[^0-9]([0-9]+)/\1#[34;1m\0\t(ALL!)[0m#g'
-  done \
+  if [ "${1}" == "-r" ]
+  then
+    countBy="RESOURCES"
+    _e "> NOTE: Listing based on exact resource count"
+    shift
+  else
+    countBy="KINDS"
+    _e "> NOTE: Listing based on number of distinct kinds only"
+  fi
+  {
+    #Header:
+    echo  FILE  TOTAL_${countBy}  SUPPORTED  WIP  UNSUPPORTED  UNKNOWN
+    for f in "$@"
+    do
+      cover ${provider} ${f} \
+      | summary "${f}"
+    done
+  } \
   | column -t
 }
 
@@ -422,7 +461,7 @@ apply_compositions()
   local MSG_BOTTOM=
   local PROVIDER_CONFIG_NAME=${PROVIDER_CONFIG_NAME:-}
   [ "$1" ] || {
-    e "ERROR: You need to specifiy the provider"
+    _e "ERROR: You need to specifiy the provider"
     return 1
   }
   local PROVIDER=${1}
@@ -430,11 +469,11 @@ apply_compositions()
   then
     local deformConfigs="$2"
   else
-    e "WARNING: No deform config file specified."
+    _e "WARNING: No deform config file specified."
     read -p "Itereate over all complete configs under ${PROVIDER}/? [Y/n] " re
     case "$re" in
       [Nn])
-        e "Exiting"
+        _e "Exiting"
         return 0
         ;;
       *)
@@ -445,7 +484,7 @@ apply_compositions()
   ### Detecting providerConfig, if not specified ###
   declare -a providerConfigs
   [ "$PROVIDER_CONFIG_NAME" ] || {
-    e "PROVIDER_CONFIG_NAME not set. Attempting auto-detect..."
+    _e "PROVIDER_CONFIG_NAME not set. Attempting auto-detect..."
     providerConfigs=( $(
       kubectl get ProviderConfig.${PROVIDER}.crossplane.io \
         -o jsonpath='{.items[*].metadata.name}') )
@@ -479,7 +518,7 @@ apply_compositions()
     then
       counter=$[ counter + 1 ]
     else
-      e "### ERROR encountered in $config"
+      _e "### ERROR encountered in $config"
     fi
   done > ${tmpCompositions}
   MSG_BOTTOM+="\nGenerated ${counter} compositions."
@@ -487,10 +526,10 @@ apply_compositions()
   kubectl apply -f "${tmpCompositions}"
   if [ $? -eq 0 ]
   then
-    e "Compositions applied successfully."
+    _e "Compositions applied successfully."
     if [ "${DEBUG}" ]
     then
-      e "DEBUG enabled. Leaving "${tmpCompositions}" for inspection."
+      _e "DEBUG enabled. Leaving "${tmpCompositions}" for inspection."
     else
       rm "${tmpCompositions}"
     fi
@@ -498,7 +537,7 @@ apply_compositions()
     MSG_BOTTOM+="\nFAILED to apply compositions. ${tmpCompositions} file left for manual inspection."
   fi
 
-  [ "$MSG_BOTTOM" ] && e -e "\e[35;1m$MSG_BOTTOM\e[0m"
+  [ "$MSG_BOTTOM" ] && _e -e "\e[35;1m$MSG_BOTTOM\e[0m"
 }
 
 
@@ -511,7 +550,7 @@ k-children ()
     local kid0=$( <<< "$kid" \
       jq -r '"\(.kind|ascii_downcase).\(.apiVersion|split("/")[0])/\(.name)"'
     )
-    e "-------- ${kid0} -------"
+    _e "-------- ${kid0} -------"
     kubectl get ${kid0} $@
   done
 }
@@ -539,24 +578,24 @@ related_events ()
   local obj_full=$(kubectl get $@ -o json | jq -c)
   local obj_spec=$(<<<${obj_full} jq -c '.spec')
   local obj_meta=$(<<<${obj_full} jq -c '{apiVersion,kind,name:.metadata.name}')
-  e -e ">> Querying events directly referencing ${obj_meta}..."
+  _e -e ">> Querying events directly referencing ${obj_meta}..."
   _get_related "${obj_meta}"
 
   local parent_res=$(<<<${obj_spec} jq -c '.resourceRef?|select(.!=null)')
   if [ "${parent_res}" ]
   then
-    e -e ">> Discovered parent resource:\n  $(<<<${parent_res} jq -cC)\n querying events...";
+    _e -e ">> Discovered parent resource:\n  $(<<<${parent_res} jq -cC)\n querying events...";
     _get_related "${parent_res}"
   fi
 
   local child_res=$(<<<${obj_spec} jq -c '.resourceRefs[]?|select(.!=null)')
   if [ "$child_res" ]
   then
-    e -e "\e[32m>> Discovered $(<<<${child_res} wc -l) child resources:\e[0m"
+    _e -e "\e[32m>> Discovered $(<<<${child_res} wc -l) child resources:\e[0m"
     echo "${child_res}" \
     | while read -r child
     do
-      e " >>events for \"${child}\" <<"
+      _e " >>events for \"${child}\" <<"
       _get_related "${child}"
     done
   fi
