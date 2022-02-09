@@ -17,7 +17,7 @@ _arg_required()
   shift 2
   if [ "$value" == "" ]
   then
-    e "ERROR: Missing required arg at position $position: $@"
+    _e "ERROR: Missing required arg at position $position: $@"
     return 1
   fi
 }
