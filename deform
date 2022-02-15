@@ -20,7 +20,7 @@ prepare()
 {
   ## globals ##
   INPUT=
-  PROVIDER=
+  #PROVIDER=
   OUT_DIR=
   MSG_BOTTOM=
   SUPPORTED_JSON=
@@ -34,6 +34,9 @@ prepare()
   if [ "${2}" ]
   then
     PROVIDER=${2}
+  elif [ "$PROVIDER" ]
+  then
+    MSG_BOTTOM="NOTE: PROVIDER value taken from the environment (\"$PROVIDER\")"
   else
     ###_e "WARNING: No provider given explicitly. Auto-selecting based on top occurences:"
     PROVIDER=$(
