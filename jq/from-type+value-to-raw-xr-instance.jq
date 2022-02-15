@@ -5,7 +5,12 @@ def to_kind:
   sub("(?<x>[a-z])"; .x | ascii_upcase) | camel;
 
 def k8s_name:
-  gsub("(.*[:/])*(?<x>[A-Za-z0-9])"; .x) | gsub("_";"-") | ascii_downcase;
+  .
+  | gsub("(.*[:/])*(?<x>[A-Za-z0-9])"; .x)
+  | gsub("_";"-")
+  | gsub("[.]-" ; "-" ) # Fix stuff like "xx.com._CNAME" endings
+  | ascii_downcase
+;
 
 def cleanup:
   walk(
