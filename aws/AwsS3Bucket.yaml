@@ -7,29 +7,12 @@ source:
 target:
   provider:
     package: provider-aws
-    version: v0.20.0
+    version: v0.23.0
   apiVersion: s3.aws.crossplane.io/v1beta1
   kind: Bucket
 imports:
-- from: "spec.id"
-  # same as: - from: "spec.bucket"
-  to: "metadata.annotations['crossplane.io/external-name']"
 - from: "spec.arn"
   to: "metadata.annotations['import.deform.io/arn']"
-
-- from: "spec.force_destroy"
-  ##XXX unsure... This might be overriding a global setting in the future
-  to: "spec.deletionPolicy"
-  transforms:
-  - type: convert
-    convert:
-      toType: string
-  - map:
-      "false": "Orphan"
-      "true": "Delete"
-    type: map
-- from: "spec.region"
-  to: "spec.forProvider.locationConstraint"
 - from: "spec.acl"
   to: "spec.forProvider.acl"
 - from: "spec.request_payer"
@@ -97,6 +80,11 @@ imports:
   to: "spec.forProvider.corsConfiguration.corsRules[0].exposeHeaders"
 - from: "spec.cors_rule[0].max_age_seconds"
   to: "spec.forProvider.corsConfiguration.corsRules[0].maxAgeSeconds"
+- from: "spec.website[0].error_document"
+  to: "spec.forProvider.websiteConfiguration.errorDocument.key"
+
+- from: "spec.server_side_encryption_configuration[0].rule[0].apply_server_side_encryption_by_default[0].sse_algorithm"
+  to: "spec.forProvider.serverSideEncryptionConfiguration.rules[0].applyServerSideEncryptionByDefault.sseAlgorithm"
 
 - from: "spec.tags"
   to: "spec.forProvider.tags"
@@ -104,8 +92,3 @@ imports:
 exports:
 - from: "spec.arn"
   at: "status.atProvider.arn"
-
-###################################################################
-#TODO: server_side_encryption_configuration
-# (to: "spec.forProvider.serverSideEncryptionConfiguration")
-# - This has "rules", where - objects need to be expanded
