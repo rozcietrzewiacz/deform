@@ -140,9 +140,28 @@ prep_files ()
       --arg provider ${provider} \
       | jq -s -f jq/from-type+value-to-raw-xr.jq \
       | jq -s '
+def meld(a; b):
+  .
+  | a as $a | b as $b
+  | if ($a|type) == "object" and ($b|type) == "object"
+    then
+      reduce ([$a,$b] | add | keys_unsorted[]) as $k
+      (
+        {};
+        .[$k] = meld( $a[$k]; $b[$k])
+      )
+    elif ($a|type) == "array" and ($b|type) == "array"
+    then
+      $a + $b
+    elif $b == null
+      then $a
+    else
+      $b
+    end
+;
         .
         | group_by(.kind)
-        | map(reduce .[] as $p ({}; . * $p))
+        | map(reduce .[] as $p ({}; meld(.;$p)))
         | .[]
       ' \
       | jq -r '
