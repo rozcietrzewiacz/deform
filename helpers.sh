@@ -39,18 +39,13 @@ YAML
 }
 
 
-prep_files ()
+generate_translation_configs ()
 {
-  #TODO RENAME to eg. "generate_conversion_configs"
-
   #IN1: tfstate-show json
   #IN2: provider name (e.g. "aws", "gcp")
   local tfstate_show=${1}
   _arg_required 1 "${tfstate_show}" tfstate-show file || return 1
   local provider=${2-aws}
-  #
-  #TODO: derive tf provider spec and crossplane crds jsons from provider name
-  #TODO: generate the above files in a standardized manner
   local crd_extracted_params=$(realpath .cache/${provider}/xp-params_v*.json)
   local terraform_specs=$(realpath ".cache/${provider}/tf-params_main.json")
   local xp_groupKinds=( $(< ${crd_extracted_params} \
@@ -334,7 +329,6 @@ cover_stats()
   {
     local file=${1} total=0 supported=0 wip=0 unsupported=0 unknown=0 add=0
     while read count kind status
-    #TODO (?) Possibly extra advanced stats: declare -A Kinds
     do
       if [ "$countBy" == "KINDS" ]; then add=1; else add=${count}; fi
       : $[ total += add ]
@@ -472,91 +466,6 @@ select_mappings ()
         sleep 1
         #break #XXX
       done
-}
-
-apply_compositions()
-{
-  ## TODO: Cleanup. Most (check!) of the functionality is moved to deform itself
-  local MSG_BOTTOM=
-  local PROVIDER_CONFIG_NAME=${PROVIDER_CONFIG_NAME:-}
-  [ "$1" ] || {
-    _e "ERROR: You need to specifiy the provider"
-    return 1
-  }
-  local PROVIDER=${1}
-  if [ "$2" ]
-  then
-    local deformConfigs="$2"
-  else
-    _e "WARNING: No deform config file specified."
-    read -p "Itereate over all complete configs under ${PROVIDER}/? [Y/n] " re
-    case "$re" in
-      [Nn])
-        _e "Exiting"
-        return 0
-        ;;
-      *)
-        local deformConfigs="${PROVIDER}/${PROVIDER^}*.yaml"
-        ;;
-    esac
-  fi
-  ### Detecting providerConfig, if not specified ###
-  declare -a providerConfigs
-  [ "$PROVIDER_CONFIG_NAME" ] || {
-    _e "PROVIDER_CONFIG_NAME not set. Attempting auto-detect..."
-    providerConfigs=( $(
-      kubectl get ProviderConfig.${PROVIDER}.crossplane.io \
-        -o jsonpath='{.items[*].metadata.name}') )
-    if [ ${#providerConfigs[@]} -gt 1 ]
-    then
-      #TODO: TEST
-      MSG_BOTTOM+="\nWARNING: Found more than one ProviderConfigs! Using first one."
-    elif [ -z "${#providerConfigs[@]}" ]
-    then
-      #TODO: TEST
-      MSG_BOTTOM+="\nWARNING: No ProviderConfig.${PROVIDER}.crossplane.io found"
-    fi
-    PROVIDER_CONFIG_NAME="${providerConfigs[0]}"
-    MSG_BOTTOM+="\nGuessed ProviderConfig name: \"${PROVIDER_CONFIG_NAME}\". To skip auto-detection next time, run:\nexport PROVIDER_CONFIG_NAME=\"${PROVIDER_CONFIG_NAME}\""
-  }
-
-  tmpCompositions=$(mktemp .cache/compositions_XXXX.yaml)
-  local counter=0
-  for config in $deformConfigs
-  do
-    local sourceName=${config#*/}
-    sourceName=${sourceName%.yaml}
-
-    # Not very clear, since helm outputs '---' at the start: echo "###### ${config}"
-    helm template \
-      "deform-${sourceName}" \
-      deform-composer/ \
-      --values=${config} \
-      --set providerConfig=${PROVIDER_CONFIG_NAME}
-    if [ $? -eq 0 ]
-    then
-      counter=$[ counter + 1 ]
-    else
-      _e "### ERROR encountered in $config"
-    fi
-  done > ${tmpCompositions}
-  MSG_BOTTOM+="\nGenerated ${counter} compositions."
-
-  kubectl apply -f "${tmpCompositions}"
-  if [ $? -eq 0 ]
-  then
-    _e "Compositions applied successfully."
-    if [ "${DEBUG}" ]
-    then
-      _e "DEBUG enabled. Leaving "${tmpCompositions}" for inspection."
-    else
-      rm "${tmpCompositions}"
-    fi
-  else
-    MSG_BOTTOM+="\nFAILED to apply compositions. ${tmpCompositions} file left for manual inspection."
-  fi
-
-  [ "$MSG_BOTTOM" ] && _e -e "\e[35;1m$MSG_BOTTOM\e[0m"
 }
 
 

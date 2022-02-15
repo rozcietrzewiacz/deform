@@ -110,7 +110,7 @@ populate_cache ()
     [ -d ${xp_crds} ] || mkdir -p ${xp_crds}
 
     #TODO: most fit for a Makefile
-    #TODO: force re-download
+    #TODO: force re-download when using master
     [ -r ${xp_crds}/crds_${xp_tag}.yaml ] \
     || \
     curl "https://doc.crds.dev/raw/github.com/crossplane/provider-${provider}@${xp_tag}" \
@@ -135,3 +135,5 @@ populate_cache ()
 }
 
 
+#### MAIN ####
+populate_cache "$@"
