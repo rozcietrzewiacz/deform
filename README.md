@@ -15,6 +15,7 @@ The imported infrastructure can be directly managed by crossplane. Deform introd
     - `jq`
     - `helm`
     - (optional) [yaml2json](https://github.com/bronze1man/yaml2json) - Only in case you need to generate extra translation configs (see below). But even then, if you don't have it, its functionality will be emulated with `kubectl`.
+    - (optional) [fzf](https://github.com/junegunn/fzf) - also only used for identifying additional translation configs.
 
 ## Translation configurations
 
@@ -25,23 +26,33 @@ At minimum, you need to understand that `deform` needs a set of **translation co
 # Workflow
 
 ## Preparation
-Before you can use deform, you first need to pull the terraform state to a local file, in a standardized "show" format. You can do that in a single step like this: `terraform show -json > my_tf_module-tf-show.json`, **or** by first saving the `ftstate` with `terraform state pull > my.tfstate.json` and then transforming it to the "show" format: `terraform show -json my.tfstate.json > my_tf_module-tf-show.json`. (You can now delete the intermediate `my.tfstate.json`.)
+
+1. Before you can use deform, you first need to pull the terraform state to a local file, in a standardized "show" format. You can do that in a single step like this: 
+
+```
+terraform show -json > my_tf_module-tf-show.json
+```
+
+**or** by first saving the `ftstate` with `terraform state pull > my.tfstate.json` and then transforming it to the "show" format: `terraform show -json my.tfstate.json > my_tf_module-tf-show.json`. (You can now delete the intermediate `my.tfstate.json`.)
 
 Once you have the `my_tf_module-tf-show.json` file, it is recommended to move it into the `in` directory, so that you can reference it easily while calling `deform`: `mv /path/to/my/terraform/my_tf_module-tf-show.json in/`
 
-
-1. Make sure you have the necessary translation configs for your `PROVIDER`, e.g.
+2. Also make sure you have the necessary translation configs for your `PROVIDER`, e.g.
 
 ```
 ls -l aws/
 ```
 
-2. Call `deform` to generate manifests from your terraform module:
+If the project is missing some translations necessary in your use case, please refer to the [OVERVIEW.md](OVERVIEW.md) document to learn how you can generate those yourself. The tooling included with `deform` will aid you at this. 
+
+## Main operation
+
+1. Call `deform` to generate manifests from your terraform module:
 ```
 ./deform in/my_tf_module-tf-show.json
 ```
 
-3. **Inspect** and then apply the generated manifests. This can be also done automatically in previous step, if you set `AUTOAPPLY` env variable to any value while calling `deform` in previous step.
+2. **Inspect** and then apply the generated manifests. This can be also done automatically in previous step, if you set `AUTOAPPLY` env variable to any value while calling `deform` in previous step.
 ```
 kubectl apply -f out/path_reported_by_deform_in_previous_step/xrds
 # inspect...
