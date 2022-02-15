@@ -55,7 +55,7 @@ Let's have a look how that's achieved:
 `------------'           `- - - - - - - - '
 ```
 
-Ok, this may look a little bit more complicated at first, but that's just because we have included the two contextual elements for completeness (the `XRD` and `CRD`). The middle part is what matters here, specifically:
+This may look a little bit more complicated at first, but that's just because we have included the two contextual elements for completeness (the `XRD` and `CRD`). The middle part is what matters here, specifically:
 1. The `Composition` - that's what does the whole magic of translating our "raw resource" (extracted in the first stage) into a *crossplane resource*.
 2. A *translation config* file - this is the only additional input at this stage. Basically, it's a helm values file, where we define the parameter mapping between terraform and crossplane side, in a concise manner. Why? Simply because writing `Compositions` manually can be a bit confusing and error-prone.
 

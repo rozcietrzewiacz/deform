@@ -63,7 +63,8 @@ kubectl apply -f out/path_reported_by_deform_in_previous_step/compositions
    **Note: If you have configured your crossplane provider properly, the cloud resources you have imported with `deform` will now be controlled by the crossplane provider controller.**
 
 
-# Tools
+---
 
-This project also includes a set of scripts to aid you in generating translation configurations (such as the YAML files under `aws/` directory).
-Those are currently a work in progress. You can find them in `helpers.sh`.
+# Project maturity level
+
+This project is currently in a **Work In Progress** state. The functionality described in the documentation has only been tested for a handful of use cases. There is also a [TODO](TODO.md) file included. All contributions are much appreciated! :heart:
