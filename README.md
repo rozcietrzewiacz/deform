@@ -80,9 +80,11 @@ kubectl apply -f out/path_reported_by_deform_in_previous_step/compositions
 
 ---
 
-# Project maturity level
+# Project maturity level and support
 
-This project is currently in a **Work In Progress** state. The functionality
-described in the documentation has only been tested for a handful of use cases.
+This project is currently in a **Work In Progress** state. Note that,
+even though it has been originally developed at Mendix Technology B.V.,
+the company does not offer any support for it.
+Functionality described in the documentation has only been tested for a handful of use cases.
 There is also a [TODO](TODO.md) file included.
 All contributions are much appreciated! :heart:
