@@ -173,7 +173,7 @@ decompose()
 
     # Not very clear, since helm outputs '---' at the start: echo "###### ${config}"
     helm template \
-      "deform-${sourceName}" \
+      "deform-${sourceName,,}" \
       deform-composer/ \
       --values=${config} \
       --set providerConfig=${PROVIDER_CONFIG_NAME} \
